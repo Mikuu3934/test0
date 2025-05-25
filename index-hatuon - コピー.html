@@ -9,419 +9,720 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f3f4f6; /* Tailwind gray-100 */
+            color: #374151; /* Tailwind gray-700 */
+            padding: 1rem;
+            text-align: center;
         }
-        /* Custom styles */
-        .btn-mic {
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 700px;
+            margin-top: 1rem;
         }
-        .btn-mic:hover {
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); /* Tailwind blue-500 */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.3s, transform 0.1s;
+            cursor: pointer;
+            border: none;
+            outline: none;
+            margin: 0.5rem;
         }
-        .btn-mic.recording {
-            animation: pulse 1.5s infinite;
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
         }
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); /* Tailwind red-500 */
-            }
-            70% {
-                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-            }
+        .btn:focus {
+            outline: 2px solid transparent;
+            outline-offset: 2px;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); /* Tailwind blue-300 focus ring */
         }
-        textarea::-webkit-scrollbar {
-            width: 8px;
-        }
-        textarea::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-        textarea::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 10px;
-        }
-        textarea::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-        }
-        .status-dot.idle {
-            background-color: #6b7280; /* gray-500 */
-        }
-        .status-dot.listening {
-            background-color: #3b82f6; /* blue-500 */
-            animation: pulse-blue 1.5s infinite;
-        }
-        .status-dot.error {
-            background-color: #ef4444; /* red-500 */
-        }
-        @keyframes pulse-blue {
-            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
-            70% { box-shadow: 0 0 0 7px rgba(59, 130, 246, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
-        }
-        .feedback-correct {
-            color: #10b981; /* Tailwind green-600 */
-            font-weight: bold;
-        }
-        .feedback-incorrect {
-            color: #ef4444; /* Tailwind red-500 */
-            font-weight: bold;
-        }
+        .btn-primary { background-color: #3b82f6; color: white; } /* blue-500 */
+        .btn-primary:hover:not(:disabled) { background-color: #2563eb; } /* blue-600 */
+        .btn-secondary { background-color: #6b7280; color: white; } /* gray-500 */
+        .btn-secondary:hover:not(:disabled) { background-color: #4b5563; } /* gray-600 */
+        .btn-success { background-color: #10b981; color: white; } /* green-500 */
+        .btn-success:hover:not(:disabled) { background-color: #059669; } /* green-600 */
+        .btn-danger { background-color: #ef4444; color: white; } /* red-500 */
+        .btn-danger:hover:not(:disabled) { background-color: #dc2626; } /* red-600 */
+        .btn-warning { background-color: #f59e0b; color: white; } /* amber-500 */
+        .btn-warning:hover:not(:disabled) { background-color: #d97706; } /* amber-600 */
+        .btn-info { background-color: #38bdf8; color: white; } /* sky-400 */
+        .btn-info:hover:not(:disabled) { background-color: #0ea5e9; } /* sky-500 */
+
+        .sentence-display { font-size: 1.5rem; font-weight: 500; margin-bottom: 1.5rem; padding: 1rem; background-color: #e5e7eb; border-radius: 0.5rem; min-height: 100px; display: flex; align-items: center; justify-content: center; color: #1f2937; }
+        .recognized-text-display { font-size: 1.125rem; margin-top: 1rem; padding: 0.75rem; background-color: #f9fafb; border: 1px solid #d1d5db; border-radius: 0.5rem; min-height: 60px; color: #4b5563; }
+        .feedback-display { font-size: 1.25rem; font-weight: 600; margin-top: 1rem; min-height: 40px; }
+        .feedback-correct { color: #10b981; } /* green-500 */
+        .feedback-incorrect { color: #ef4444; } /* red-500 */
+        .status-message { margin-top: 1rem; color: #6b7280; min-height: 24px; }
+        .footer-note { margin-top: 2rem; font-size: 0.875rem; color: #6b7280; }
+
+        .teacher-mode-container { border-top: 2px solid #3b82f6; margin-top: 2rem; padding-top: 1.5rem; }
+        .sentence-list-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; margin-bottom: 0.5rem; background-color: #f9fafb; }
+        .sentence-text { flex-grow: 1; text-align: left; margin-right: 1rem; color: #374151;}
+        .sentence-actions button { margin-left: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.875rem; }
+        .add-sentence-form textarea { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.5rem; min-height: 80px; margin-bottom: 0.5rem; color: #374151;}
+        
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal-content { background-color: #fefefe; margin: auto; padding: 20px; border: 1px solid #888; width: 90%; max-width: 500px; border-radius: 0.5rem; text-align: left; color: #374151;}
+        .modal-content textarea { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.5rem; min-height: 100px; margin-bottom: 1rem; color: #374151;}
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;}
+        .modal-title { font-size: 1.5rem; font-weight: 600; }
+        .modal-body { margin-bottom: 1.5rem; }
+        .modal-footer { text-align: right; }
+        .close-btn { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; background: none; border: none; padding: 0; line-height: 1;}
+        .close-btn:hover, .close-btn:focus { color: black; text-decoration: none; }
+        
+        .audio-player-container { margin-top: 1rem; }
+        audio::-webkit-media-controls-panel { background-color: #e5e7eb; }
+        audio::-webkit-media-controls-play-button { background-color: #3b82f6; border-radius: 50%; }
+        audio::-webkit-media-controls-current-time-display, 
+        audio::-webkit-media-controls-time-remaining-display { color: #1f2937; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-slate-900 to-slate-800 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 selection:bg-blue-500 selection:text-white">
+<body>
+    <div class="w-full max-w-md mx-auto my-4">
+        <button id="toggle-mode-btn" class="btn btn-primary w-full">Switch to Teacher Mode</button>
+    </div>
 
-    <div class="bg-slate-800 shadow-2xl rounded-xl p-6 md:p-10 w-full max-w-2xl">
-        <header class="mb-8 text-center">
-            <h1 class="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
-                English Pronunciation Practice
-            </h1>
-            <p class="text-slate-400 mt-2">Enter a sentence below, then press the mic button to practice your pronunciation.</p>
-        </header>
-
-        <div class="mb-6">
-            <label for="referenceText" class="block text-sm font-medium text-slate-300 mb-1">Reference Sentence:</label>
-            <textarea id="referenceText" rows="3" class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter the English sentence you want to practice here..."></textarea>
+    <div class="container" id="student-mode-container">
+        <h1 class="text-3xl font-bold mb-6 text-center text-blue-600">English Pronunciation Practice</h1>
+        <div id="sentence-display" class="sentence-display">Loading sentence...</div>
+        <div class="flex flex-wrap justify-center items-center mb-4">
+            <button id="speak-btn" class="btn btn-primary">Speak Example</button>
+            <button id="record-btn" class="btn btn-success">Record Pronunciation</button>
+            <button id="play-recorded-audio-btn" class="btn btn-info" disabled>Play My Recording</button>
         </div>
+        <div id="status-message" class="status-message">Ready</div>
+        <div class="mt-4">
+            <h2 class="text-xl font-semibold mb-2">You Pronounced (Text):</h2>
+            <div id="recognized-text" class="recognized-text-display"></div>
+        </div>
+        <div id="result-feedback" class="feedback-display"></div>
+        <div class="audio-player-container">
+            <audio id="recorded-audio-player" controls class="w-full hidden"></audio>
+        </div>
+        <div class="mt-6 text-center">
+            <button id="next-btn" class="btn btn-secondary">Next Example</button>
+        </div>
+    </div>
 
-        <div class="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <button id="micButton" class="btn-mic w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
-                <svg id="micIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                <span id="micButtonText">Start Speaking</span>
-            </button>
-            <div id="statusMessage" class="text-sm text-slate-400 flex items-center">
-                <span id="statusDot" class="status-dot idle"></span>
-                <span id="statusText">Idle</span>
+    <div class="container teacher-mode-container hidden" id="teacher-mode-container">
+        <h1 class="text-3xl font-bold mb-6 text-center text-blue-600">Manage Sentences</h1>
+        <div class="add-sentence-form mb-6">
+            <h2 class="text-xl font-semibold mb-2 text-left">Add New Sentence</h2>
+            <textarea id="new-sentence-text" placeholder="Enter new sentence here..."></textarea>
+            <button id="add-sentence-btn" class="btn btn-success w-full">Add Sentence</button>
+        </div>
+        <div>
+            <h2 class="text-xl font-semibold mb-2 text-left">Registered Sentences List</h2>
+            <div id="sentence-list" class="space-y-2">
+                </div>
+            <p id="no-sentences-message" class="text-gray-500 mt-4 hidden">No sentences registered yet.</p>
+        </div>
+    </div>
+
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Edit Sentence</h2>
+                <span class="close-btn" id="close-edit-modal-btn">&times;</span>
             </div>
-        </div>
-
-        <div class="mb-6">
-            <label for="transcriptOutput" class="block text-sm font-medium text-slate-300 mb-1">What you said:</label>
-            <textarea id="transcriptOutput" rows="3" class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none" readonly placeholder="Your speech will appear here..."></textarea>
-        </div>
-
-        <div class="mb-6">
-            <label for="feedbackArea" class="block text-sm font-medium text-slate-300 mb-1">Feedback:</label>
-            <div id="feedbackArea" class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 min-h-[40px]" placeholder="Feedback will appear here..."></div>
-        </div>
-
-
-        <div class="flex flex-col sm:flex-row gap-4">
-            <button id="copyButton" class="w-full sm:w-1/2 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 flex items-center justify-center space-x-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                <span>Copy What You Said</span>
-            </button>
-            <button id="clearButton" class="w-full sm:w-1/2 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 flex items-center justify-center space-x-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                <span>Clear All</span>
-            </button>
-        </div>
-         <div id="messageBox" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
-            <div class="bg-slate-700 p-6 rounded-lg shadow-xl max-w-sm w-full">
-                <h3 id="messageBoxTitle" class="text-lg font-semibold text-slate-100 mb-3">Message</h3>
-                <p id="messageBoxText" class="text-slate-300 mb-4"></p>
-                <button id="messageBoxOkButton" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">OK</button>
+            <div class="modal-body">
+                <textarea id="edit-sentence-input"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button id="save-edit-btn" class="btn btn-primary">Save Changes</button>
+                 <button id="cancel-edit-btn" class="btn btn-secondary">Cancel</button>
             </div>
         </div>
     </div>
 
-    <footer class="mt-10 text-center text-sm text-slate-500">
-        <p>&copy; 2024 English Pronunciation Practice App. All rights reserved.</p>
-        <p class="mt-1">This app requires a browser that supports the Web Speech API.</p>
-    </footer>
+    <div id="custom-alert-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="custom-alert-title" class="modal-title">Alert</h2>
+                 <button id="close-alert-modal-btn" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="custom-alert-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="custom-alert-ok-btn" class="btn btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="custom-confirm-modal" class="modal">
+        <div class="modal-content">
+             <div class="modal-header">
+                <h2 id="custom-confirm-title" class="modal-title">Confirm</h2>
+                <button id="close-confirm-modal-btn" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="custom-confirm-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="custom-confirm-yes-btn" class="btn btn-danger">Yes</button>
+                <button id="custom-confirm-no-btn" class="btn btn-secondary">No</button>
+            </div>
+        </div>
+    </div>
+
+    <p class="footer-note">
+        This app uses the browser's Web Speech API. For the best experience, please use the latest version of Google Chrome. Microphone permission is required.
+    </p>
 
     <script>
-        // DOM elements
-        const micButton = document.getElementById('micButton');
-        const micButtonText = document.getElementById('micButtonText');
-        const micIcon = document.getElementById('micIcon');
-        const transcriptOutput = document.getElementById('transcriptOutput');
-        const statusMessage = document.getElementById('statusMessage');
-        const statusText = document.getElementById('statusText');
-        const statusDot = document.getElementById('statusDot');
-        const copyButton = document.getElementById('copyButton');
-        const clearButton = document.getElementById('clearButton');
-        const referenceText = document.getElementById('referenceText'); // Reference text input
-        const feedbackArea = document.getElementById('feedbackArea');   // Feedback display area
+        const defaultSentences = [
+            "Today is a sunny day. I enjoy learning new things.",
+            "My favorite season is spring. Many flowers bloom in spring.",
+            "I will go to the library tomorrow. I want to borrow some interesting books."
+        ];
+        let sentences = [];
 
-        // Message box elements
-        const messageBox = document.getElementById('messageBox');
-        const messageBoxTitle = document.getElementById('messageBoxTitle');
-        const messageBoxText = document.getElementById('messageBoxText');
-        const messageBoxOkButton = document.getElementById('messageBoxOkButton');
+        let currentSentenceIndex = 0;
+        let speechRecognition;
+        let synthesis = window.speechSynthesis;
+        let englishVoice = null;
+        let micPermissionGranted = false;
+        let currentMode = 'student'; // 'student' or 'teacher'
+        let editingSentenceIndex = -1;
 
-        // Web Speech API setup
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition;
+        let mediaRecorder;
+        let audioChunks = [];
+        let recordedAudioBlob = null;
+        let isRecording = false; // Tracks MediaRecorder and SpeechRecognition state
 
-        let isRecording = false;
-        let finalTranscript = '';
+        // DOM Elements
+        const sentenceDisplay = document.getElementById('sentence-display');
+        const speakButton = document.getElementById('speak-btn');
+        const recordButton = document.getElementById('record-btn');
+        const playRecordedAudioButton = document.getElementById('play-recorded-audio-btn');
+        const recordedAudioPlayer = document.getElementById('recorded-audio-player');
+        const recognizedTextDisplay = document.getElementById('recognized-text');
+        const resultFeedback = document.getElementById('result-feedback');
+        const nextButton = document.getElementById('next-btn');
+        const statusMessage = document.getElementById('status-message');
 
-        if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.lang = 'en-US'; // Set language to English (US)
+        const toggleModeButton = document.getElementById('toggle-mode-btn');
+        const studentModeContainer = document.getElementById('student-mode-container');
+        const teacherModeContainer = document.getElementById('teacher-mode-container');
+        const newSentenceText = document.getElementById('new-sentence-text');
+        const addSentenceButton = document.getElementById('add-sentence-btn');
+        const sentenceList = document.getElementById('sentence-list');
+        const noSentencesMessage = document.getElementById('no-sentences-message');
 
-            // On recognition start
-            recognition.onstart = () => {
-                isRecording = true;
-                micButtonText.textContent = 'Stop Speaking';
-                micButton.classList.add('recording', 'bg-red-600', 'hover:bg-red-700');
-                micButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                micIcon.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`; // Stop icon
-                statusText.textContent = 'Listening...';
-                statusDot.className = 'status-dot listening';
-                referenceText.disabled = true; // Disable reference text editing during recording
-                feedbackArea.textContent = ''; // Clear previous feedback
-                finalTranscript = ''; // Clear previous final transcript
-                transcriptOutput.value = ''; // Clear previous transcript output
-                console.log('Speech recognition started. Language: ' + recognition.lang);
+        const editModal = document.getElementById('edit-modal');
+        const closeEditModalButton = document.getElementById('close-edit-modal-btn');
+        const editSentenceInput = document.getElementById('edit-sentence-input');
+        const saveEditButton = document.getElementById('save-edit-btn');
+        const cancelEditButton = document.getElementById('cancel-edit-btn');
+
+        // Custom Modal Elements
+        const customAlertModal = document.getElementById('custom-alert-modal');
+        const customAlertTitle = document.getElementById('custom-alert-title');
+        const customAlertMessage = document.getElementById('custom-alert-message');
+        const customAlertOkButton = document.getElementById('custom-alert-ok-btn');
+        const closeAlertModalButton = document.getElementById('close-alert-modal-btn');
+
+        const customConfirmModal = document.getElementById('custom-confirm-modal');
+        const customConfirmTitle = document.getElementById('custom-confirm-title');
+        const customConfirmMessage = document.getElementById('custom-confirm-message');
+        const customConfirmYesButton = document.getElementById('custom-confirm-yes-btn');
+        const customConfirmNoButton = document.getElementById('custom-confirm-no-btn');
+        const closeConfirmModalButton = document.getElementById('close-confirm-modal-btn');
+
+        // --- Utility Functions for Modals ---
+        function showAlert(title, message) {
+            customAlertTitle.textContent = title;
+            customAlertMessage.textContent = message;
+            customAlertModal.style.display = 'flex';
+        }
+        customAlertOkButton.addEventListener('click', () => customAlertModal.style.display = 'none');
+        closeAlertModalButton.addEventListener('click', () => customAlertModal.style.display = 'none');
+
+        function showConfirm(title, message, callback) {
+            customConfirmTitle.textContent = title;
+            customConfirmMessage.textContent = message;
+            customConfirmModal.style.display = 'flex';
+            customConfirmYesButton.onclick = () => {
+                customConfirmModal.style.display = 'none';
+                callback(true);
             };
-
-            // On receiving result
-            recognition.onresult = (event) => {
-                let interimTranscript = '';
-                finalTranscript = ''; // Reset finalTranscript for each new result set from continuous recognition
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    const transcriptPart = event.results[i][0].transcript;
-                    if (event.results[i].isFinal) {
-                        finalTranscript += transcriptPart;
-                    } else {
-                        interimTranscript += transcriptPart;
-                    }
-                }
-                transcriptOutput.value = (finalTranscript + interimTranscript).trim();
-                transcriptOutput.scrollTop = transcriptOutput.scrollHeight;
-
-                if (finalTranscript) { // Process only when there's a final transcript
-                    checkPronunciation();
-                }
-                console.log('Recognition result:', event.results);
+            customConfirmNoButton.onclick = () => {
+                customConfirmModal.style.display = 'none';
+                callback(false);
             };
+        }
+        closeConfirmModalButton.addEventListener('click', () => customConfirmModal.style.display = 'none');
+        cancelEditButton.addEventListener('click', () => closeEditModal());
 
-            // On error
-            recognition.onerror = (event) => {
-                console.error('Speech recognition error:', event.error);
-                let errorMessage = 'An error occurred during speech recognition.';
-                if (event.error === 'no-speech') {
-                    errorMessage = 'No speech was detected. Please try again.';
-                } else if (event.error === 'audio-capture') {
-                    errorMessage = 'Audio capture failed. Please check your microphone connection.';
-                } else if (event.error === 'not-allowed') {
-                    errorMessage = 'Microphone access was not allowed. Please check your browser settings (e.g., the icon on the left of the address bar) and allow microphone access.';
-                } else if (event.error === 'network') {
-                    errorMessage = 'A network error occurred. Please check your connection.';
-                }
-                statusText.textContent = `Error: ${event.error}`;
-                statusDot.className = 'status-dot error';
-                showCustomAlert('Error', errorMessage);
-                stopAndResetRecognition();
-            };
 
-            // On recognition end
-            recognition.onend = () => {
-                stopAndResetRecognition();
-                console.log('Speech recognition ended.');
-            };
-
-        } else {
-            // Web Speech API not supported
-            showCustomAlert('Browser Not Supported', 'Your browser does not support speech recognition.');
-            micButton.disabled = true;
-            micButtonText.textContent = 'Not Supported';
-            statusText.textContent = 'Browser not supported';
-            statusDot.className = 'status-dot error';
-            referenceText.disabled = true;
+        // --- Local Storage Functions ---
+        function loadSentencesFromStorage() {
+            const storedSentences = localStorage.getItem('pronunciationAppSentences');
+            if (storedSentences) {
+                sentences = JSON.parse(storedSentences);
+            }
+            if (!sentences || sentences.length === 0) { // Ensure there are always some sentences
+                sentences = [...defaultSentences];
+                saveSentencesToStorage();
+            }
         }
 
-        // Mic button click event
-        micButton.addEventListener('click', () => {
-            if (!SpeechRecognition) return;
+        function saveSentencesToStorage() {
+            localStorage.setItem('pronunciationAppSentences', JSON.stringify(sentences));
+        }
+
+        // --- Mode Toggling ---
+        function toggleMode() {
+            if (currentMode === 'student') {
+                currentMode = 'teacher';
+                toggleModeButton.textContent = 'Switch to Student Mode';
+                studentModeContainer.classList.add('hidden');
+                teacherModeContainer.classList.remove('hidden');
+                renderSentenceList();
+            } else {
+                currentMode = 'student';
+                toggleModeButton.textContent = 'Switch to Teacher Mode';
+                studentModeContainer.classList.remove('hidden');
+                teacherModeContainer.classList.add('hidden');
+                loadSentencesFromStorage(); // Reload sentences for student mode
+                currentSentenceIndex = 0; // Reset index
+                displaySentence();
+            }
+        }
+        toggleModeButton.addEventListener('click', toggleMode);
+
+        // --- Teacher Mode Functions ---
+        function renderSentenceList() {
+            sentenceList.innerHTML = '';
+            if (sentences.length === 0) {
+                noSentencesMessage.classList.remove('hidden');
+                return;
+            }
+            noSentencesMessage.classList.add('hidden');
+            sentences.forEach((sentence, index) => {
+                const listItem = document.createElement('div');
+                listItem.className = 'sentence-list-item';
+                const textSpan = document.createElement('span');
+                textSpan.className = 'sentence-text';
+                textSpan.textContent = sentence.length > 50 ? sentence.substring(0, 50) + '...' : sentence;
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'sentence-actions';
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn btn-warning';
+                editBtn.textContent = 'Edit';
+                editBtn.onclick = () => openEditModal(index);
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn btn-danger';
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.onclick = () => deleteSentence(index);
+                actionsDiv.appendChild(editBtn);
+                actionsDiv.appendChild(deleteBtn);
+                listItem.appendChild(textSpan);
+                listItem.appendChild(actionsDiv);
+                sentenceList.appendChild(listItem);
+            });
+        }
+
+        function addSentence() {
+            const text = newSentenceText.value.trim();
+            if (text) {
+                sentences.push(text);
+                saveSentencesToStorage();
+                renderSentenceList();
+                newSentenceText.value = '';
+                showAlert('Success', 'Sentence added successfully.');
+            } else {
+                showAlert('Input Required', 'Please enter a sentence.');
+            }
+        }
+        addSentenceButton.addEventListener('click', addSentence);
+
+        function deleteSentence(index) {
+            const sentenceToDelete = sentences[index].substring(0,30) + (sentences[index].length > 30 ? "..." : "");
+            showConfirm('Confirm Deletion', `Are you sure you want to delete "${sentenceToDelete}"?`, (confirmed) => {
+                if (confirmed) {
+                    sentences.splice(index, 1);
+                    saveSentencesToStorage();
+                    renderSentenceList();
+                    showAlert('Success', 'Sentence deleted successfully.');
+                }
+            });
+        }
+
+        function openEditModal(index) {
+            editingSentenceIndex = index;
+            editSentenceInput.value = sentences[index];
+            editModal.style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            editModal.style.display = 'none';
+            editingSentenceIndex = -1;
+        }
+        closeEditModalButton.addEventListener('click', closeEditModal);
+        // Close modal if clicked outside content
+        window.addEventListener('click', (event) => {
+            if (event.target == editModal) closeEditModal();
+            if (event.target == customAlertModal) customAlertModal.style.display = 'none';
+            if (event.target == customConfirmModal) customConfirmModal.style.display = 'none';
+        });
+
+
+        function saveEditedSentence() {
+            const newText = editSentenceInput.value.trim();
+            if (newText && editingSentenceIndex > -1) {
+                sentences[editingSentenceIndex] = newText;
+                saveSentencesToStorage();
+                renderSentenceList();
+                closeEditModal();
+                showAlert('Success', 'Sentence updated successfully.');
+            } else if (!newText) {
+                showAlert('Input Required', 'Please enter a sentence.');
+            }
+        }
+        saveEditButton.addEventListener('click', saveEditedSentence);
+
+        // --- Student Mode (Pronunciation App) Functions ---
+        if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+            const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+            speechRecognition = new SpeechRecognitionAPI();
+            speechRecognition.continuous = false; // Process after user stops speaking for a bit
+            speechRecognition.lang = 'en-US';
+            speechRecognition.interimResults = false; // Only final results
+            speechRecognition.maxAlternatives = 1;
+
+            speechRecognition.onresult = (event) => {
+                const recognized = event.results[0][0].transcript;
+                recognizedTextDisplay.textContent = recognized;
+                comparePronunciation(sentences[currentSentenceIndex], recognized);
+            };
+
+            speechRecognition.onerror = (event) => {
+                console.error("Speech recognition error:", event.error, event.message);
+                let msg = "Speech recognition error.";
+                if (event.error === 'no-speech') msg = "No speech was detected.";
+                else if (event.error === 'audio-capture') msg = "Microphone access issue.";
+                else if (event.error === 'not-allowed') {
+                    msg = "Microphone permission denied.";
+                    micPermissionGranted = false; // Reset permission status
+                } else if (event.error === 'network') msg = "Network error during recognition.";
+                else msg = `Unexpected error: ${event.error}`;
+                
+                statusMessage.textContent = msg;
+                if (isRecording) stopAudioAndSpeechRecognition(); // Ensure recording stops on error
+            };
+
+            speechRecognition.onstart = () => {
+                // UI updates are handled in startAudioAndSpeechRecognition
+            };
+            
+            speechRecognition.onend = () => {
+                // This can be triggered by speechRecognition.stop() or automatically.
+                // Ensure UI consistency if recording was active.
+                if (isRecording) {
+                    stopAudioAndSpeechRecognition(); // Handles UI reset if not already done
+                }
+            };
+        } else {
+            statusMessage.textContent = "Your browser doesn't support speech recognition.";
+            disableStudentButtons();
+        }
+        
+        if ('speechSynthesis' in window) {
+            synthesis.onvoiceschanged = () => {
+                const voices = synthesis.getVoices();
+                englishVoice = voices.find(voice => voice.lang.startsWith('en-') && voice.name.includes('Google US English')) ||
+                               voices.find(voice => voice.lang.startsWith('en-') && voice.default) ||
+                               voices.find(voice => voice.lang.startsWith('en-'));
+                if (!englishVoice) console.warn("English voice not found for TTS.");
+                // displaySentence(); // Initial display is handled at the end of script
+            };
+            if (synthesis.getVoices().length > 0) { // Firefox might load voices immediately
+                synthesis.onvoiceschanged();
+            }
+        } else {
+            statusMessage.textContent = "Your browser doesn't support speech synthesis.";
+            if(speakButton) speakButton.disabled = true;
+            // displaySentence(); // Initial display
+        }
+
+        function disableStudentButtons() {
+            if(speakButton) speakButton.disabled = true;
+            if(recordButton) recordButton.disabled = true;
+            if(nextButton) nextButton.disabled = true;
+            if(playRecordedAudioButton) playRecordedAudioButton.disabled = true;
+        }
+
+        function displaySentence() {
+            if (sentences && sentences.length > 0 && currentSentenceIndex < sentences.length) {
+                sentenceDisplay.textContent = sentences[currentSentenceIndex];
+                nextButton.disabled = sentences.length <= 1;
+            } else {
+                sentenceDisplay.textContent = "No sentences available. Add some in Teacher Mode.";
+                disableStudentButtons();
+            }
+            recognizedTextDisplay.textContent = "";
+            resultFeedback.textContent = "";
+            playRecordedAudioButton.disabled = true;
+            recordedAudioPlayer.classList.add('hidden');
+            recordedAudioPlayer.src = '';
+            if (statusMessage) statusMessage.textContent = "Ready";
+        }
+
+        function speakSentence() {
+            if (!synthesis || !('speak' in synthesis) || !sentences || sentences.length === 0) { 
+                statusMessage.textContent = "Speech synthesis not available or no sentence loaded.";
+                return;
+            }
+            if (synthesis.speaking) synthesis.cancel(); // Cancel any ongoing speech
+
+            const utterance = new SpeechSynthesisUtterance(sentences[currentSentenceIndex]);
+            if (englishVoice) utterance.voice = englishVoice;
+            utterance.lang = 'en-US';
+            utterance.pitch = 1;
+            utterance.rate = 0.9; 
+            
+            utterance.onstart = () => {
+                statusMessage.textContent = "Speaking example...";
+                speakButton.disabled = true;
+                recordButton.disabled = true;
+                playRecordedAudioButton.disabled = true;
+            };
+            utterance.onend = () => {
+                statusMessage.textContent = "Example finished.";
+                speakButton.disabled = false;
+                if (micPermissionGranted || speechRecognition) recordButton.disabled = false;
+            };
+            utterance.onerror = (event) => {
+                console.error("Speech synthesis error:", event.error);
+                statusMessage.textContent = "Error speaking example.";
+                speakButton.disabled = false;
+                if (micPermissionGranted || speechRecognition) recordButton.disabled = false;
+            };
+            synthesis.speak(utterance);
+        }
+        
+        async function handleRecordButtonClick() {
+            if (!speechRecognition || !sentences || sentences.length === 0) {
+                statusMessage.textContent = "Speech recognition not available or no sentence loaded.";
+                return;
+            }
 
             if (isRecording) {
-                recognition.stop(); // This will trigger onend, which calls stopAndResetRecognition
+                stopAudioAndSpeechRecognition();
             } else {
-                if (!referenceText.value.trim()) {
-                    showCustomAlert('Input Required', 'Please enter a reference sentence first.');
+                await startAudioAndSpeechRecognition();
+            }
+        }
+        
+        async function startAudioAndSpeechRecognition() {
+            if (!micPermissionGranted) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    micPermissionGranted = true;
+                    setupMediaRecorder(stream); // Setup MediaRecorder with the obtained stream
+                } catch (err) {
+                    console.error("Mic permission error:", err);
+                    micPermissionGranted = false;
+                    let msg = "Error accessing microphone.";
+                    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') msg = "Microphone permission denied.";
+                    else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') msg = "No microphone found.";
+                    statusMessage.textContent = msg;
+                    return; 
+                }
+            } else if (!mediaRecorder || mediaRecorder.stream.getAudioTracks().some(track => track.readyState === 'ended')) {
+                 // If permission was granted but stream is old/ended, get a new one
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    setupMediaRecorder(stream);
+                } catch (err) {
+                    statusMessage.textContent = "Failed to re-initialize microphone.";
                     return;
                 }
-                try {
-                    finalTranscript = ''; // Clear previous final transcript
-                    transcriptOutput.value = ''; // Clear previous transcript output
-                    feedbackArea.innerHTML = ''; // Clear previous feedback
-                    recognition.start();
-                } catch (e) {
-                    console.error("Recognition start error:", e);
-                    showCustomAlert('Error', 'Could not start recognition. Please wait a moment and try again.');
-                    stopAndResetRecognition();
-                }
             }
-        });
-        
-        // Function to normalize text for comparison
-        function normalizeText(text) {
-            return text.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g,"").replace(/\s+/g, ' ').trim();
-        }
 
-        // Function to check pronunciation
-        function checkPronunciation() {
-            const refText = normalizeText(referenceText.value);
-            const spokenText = normalizeText(finalTranscript); // Use the accumulated finalTranscript
 
-            if (!refText) {
-                feedbackArea.textContent = "Please enter a reference sentence.";
-                feedbackArea.className = 'w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 min-h-[40px]';
+            if (!mediaRecorder) { // If setupMediaRecorder failed
+                statusMessage.textContent = "Recording setup failed.";
                 return;
             }
 
-            if (!spokenText) {
-                 // This case might be handled by no-speech error, but as a fallback:
-                feedbackArea.textContent = "Could not hear what you said clearly.";
-                feedbackArea.className = 'w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 min-h-[40px] feedback-incorrect';
-                return;
-            }
-
-            console.log("Reference (normalized):", refText);
-            console.log("Spoken (normalized):", spokenText);
-
-            if (refText === spokenText) {
-                feedbackArea.textContent = "Excellent! That's correct.";
-                feedbackArea.className = 'w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 min-h-[40px] feedback-correct';
-            } else {
-                // Basic diff highlighting (could be improved)
-                let feedbackHTML = "Not quite. Let's check the differences:<br>";
-                feedbackHTML += `<strong>Expected:</strong> ${highlightDifferences(refText, spokenText, true)}<br>`;
-                feedbackHTML += `<strong>You said:</strong> ${highlightDifferences(spokenText, refText, false)}`;
-                feedbackArea.innerHTML = feedbackHTML;
-                feedbackArea.className = 'w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 min-h-[40px] feedback-incorrect';
-            }
-        }
-        
-        // Simple diff highlighting function
-        function highlightDifferences(text1, text2, isReference) {
-            // This is a very basic word-by-word comparison.
-            // For more sophisticated diff, a library might be needed.
-            const words1 = text1.split(' ');
-            const words2 = text2.split(' ');
-            let result = '';
-
-            for (let i = 0; i < Math.max(words1.length, words2.length); i++) {
-                if (i < words1.length) {
-                    if (i < words2.length && words1[i] === words2[i]) {
-                        result += words1[i] + ' ';
-                    } else {
-                         // If it's the reference text and word is missing in spoken, or if it's spoken text and it's an extra/wrong word
-                        result += `<span class="${isReference ? 'text-green-400' : 'text-red-400 line-through'}">${words1[i]}</span> `;
-                    }
-                } else if (i < words2.length && !isReference) { // Extra words in spoken text if this is the spoken text being compared
-                     // This part is tricky with simple diff. Let's keep it simpler for now.
-                }
-            }
-             return result.trim();
-        }
+            audioChunks = [];
+            recordedAudioBlob = null;
+            playRecordedAudioButton.disabled = true;
+            recordedAudioPlayer.classList.add('hidden');
+            recordedAudioPlayer.src = '';
+            recognizedTextDisplay.textContent = ""; // Clear previous recognized text
+            resultFeedback.textContent = "";      // Clear previous feedback
 
 
-        // Function to stop recognition and reset UI
-        function stopAndResetRecognition() {
-            if (isRecording) {
-                 if (recognition && SpeechRecognition) {
-                    try {
-                        // recognition.stop(); // onend will be called, so this might be redundant if called from onend itself.
-                                         // However, if called from onerror, it's necessary.
-                    } catch (e) {
-                        console.warn("recognition.stop() error (ignored):", e);
-                    }
-                }
-            }
-            isRecording = false;
-            micButtonText.textContent = 'Start Speaking';
-            micButton.classList.remove('recording', 'bg-red-600', 'hover:bg-red-700');
-            micButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
-            micIcon.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>`; // Mic icon
-            statusText.textContent = 'Idle';
-            statusDot.className = 'status-dot idle';
-            referenceText.disabled = false; // Re-enable reference text editing
-        }
-
-        // Copy button event
-        copyButton.addEventListener('click', () => {
-            if (transcriptOutput.value) {
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(transcriptOutput.value)
-                        .then(() => {
-                            showCustomAlert('Copied', 'What you said has been copied to the clipboard.');
-                        })
-                        .catch(err => {
-                            console.error('Failed to copy to clipboard (API):', err);
-                            fallbackCopyTextToClipboard(transcriptOutput.value);
-                        });
-                } else {
-                    fallbackCopyTextToClipboard(transcriptOutput.value);
-                }
-            } else {
-                showCustomAlert('Copy Failed', 'There is no text to copy.');
-            }
-        });
-
-        function fallbackCopyTextToClipboard(text) {
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            textArea.style.position = "fixed";
-            textArea.style.top = "0";
-            textArea.style.left = "0";
-            textArea.style.width = "2em";
-            textArea.style.height = "2em";
-            textArea.style.padding = "0";
-            textArea.style.border = "none";
-            textArea.style.outline = "none";
-            textArea.style.boxShadow = "none";
-            textArea.style.background = "transparent";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
             try {
-                const successful = document.execCommand('copy');
-                if (successful) {
-                    showCustomAlert('Copied', 'What you said has been copied to the clipboard.');
-                } else {
-                    showCustomAlert('Copy Failed', 'Failed to copy text to clipboard.');
-                }
-            } catch (err) {
-                showCustomAlert('Copy Failed', 'Error copying text to clipboard.');
+                mediaRecorder.start();
+                speechRecognition.start(); 
+                isRecording = true;
+                recordButton.textContent = "Stop Recording";
+                recordButton.classList.remove('btn-success');
+                recordButton.classList.add('btn-danger');
+                statusMessage.textContent = "Recording... Speak into the microphone.";
+                speakButton.disabled = true; 
+                nextButton.disabled = true; 
+            } catch (e) {
+                console.error("Error starting recording/recognition:", e);
+                statusMessage.textContent = "Failed to start recording.";
+                isRecording = false; // Reset state
+                recordButton.textContent = "Record Pronunciation";
+                recordButton.classList.remove('btn-danger');
+                recordButton.classList.add('btn-success');
+                speakButton.disabled = false;
+                nextButton.disabled = sentences.length <= 1;
             }
-            document.body.removeChild(textArea);
         }
 
-        // Clear button event
-        clearButton.addEventListener('click', () => {
-            referenceText.value = '';
-            transcriptOutput.value = '';
-            finalTranscript = '';
-            feedbackArea.textContent = '';
-            feedbackArea.className = 'w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 min-h-[40px]';
-            showCustomAlert('Cleared', 'All text fields have been cleared.');
-        });
-
-        // Custom alert display function
-        function showCustomAlert(title, message) {
-            messageBoxTitle.textContent = title;
-            messageBoxText.textContent = message;
-            messageBox.classList.remove('hidden');
+        function setupMediaRecorder(stream) {
+            try {
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+                mediaRecorder.onstop = () => {
+                    if (audioChunks.length > 0) {
+                        recordedAudioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+                        const audioUrl = URL.createObjectURL(recordedAudioBlob);
+                        recordedAudioPlayer.src = audioUrl;
+                        playRecordedAudioButton.disabled = false;
+                    } else {
+                        playRecordedAudioButton.disabled = true;
+                    }
+                    // Stop the tracks of the stream MediaRecorder was using
+                    if (mediaRecorder && mediaRecorder.stream) {
+                        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                    }
+                };
+                mediaRecorder.onerror = (event) => {
+                    console.error("MediaRecorder error:", event.error);
+                    statusMessage.textContent = "Error during audio recording.";
+                    if (isRecording) stopAudioAndSpeechRecognition();
+                };
+            } catch (e) {
+                console.error("Error setting up MediaRecorder:", e);
+                statusMessage.textContent = "MediaRecorder setup failed. Browser might not support it.";
+                mediaRecorder = null;
+            }
         }
 
-        // Custom alert OK button
-        messageBoxOkButton.addEventListener('click', () => {
-            messageBox.classList.add('hidden');
+        function stopAudioAndSpeechRecognition() {
+            if (mediaRecorder && mediaRecorder.state === "recording") {
+                mediaRecorder.stop(); // This will trigger mediaRecorder.onstop
+            }
+            if (speechRecognition && isRecording) { // Check isRecording to prevent stopping if not started by this flow
+                try {
+                    speechRecognition.stop(); 
+                } catch (e) {
+                    console.warn("Error stopping speech recognition (might be already stopped):", e);
+                }
+            }
+            isRecording = false; // Set this early
+            recordButton.textContent = "Record Pronunciation";
+            recordButton.classList.remove('btn-danger');
+            recordButton.classList.add('btn-success');
+            recordButton.disabled = false; 
+            statusMessage.textContent = "Recording stopped. Processing..."; // Speech recognition might still be processing
+            speakButton.disabled = false; 
+            nextButton.disabled = sentences.length <= 1; 
+        }
+        
+        playRecordedAudioButton.addEventListener('click', () => {
+            if (recordedAudioPlayer.src && recordedAudioBlob) {
+                recordedAudioPlayer.classList.remove('hidden');
+                recordedAudioPlayer.play()
+                    .catch(e => console.error("Error playing audio:", e));
+            } else {
+                statusMessage.textContent = "No recorded audio to play.";
+            }
         });
+
+        function comparePronunciation(original, recognized) {
+            const normalize = (text) => text.toLowerCase().replace(/[.,?!']/g, "").trim();
+            const normalizedOriginal = normalize(original);
+            const normalizedRecognized = normalize(recognized);
+
+            if (!normalizedOriginal) { // Should not happen if sentences are loaded
+                resultFeedback.textContent = "Error: No reference sentence loaded.";
+                resultFeedback.className = "feedback-display feedback-incorrect";
+                return;
+            }
+            if (!normalizedRecognized) { // If speech recognition returned empty
+                resultFeedback.textContent = "Could not understand your speech. Try again.";
+                resultFeedback.className = "feedback-display feedback-incorrect";
+                return;
+            }
+
+
+            if (normalizedOriginal === normalizedRecognized) {
+                resultFeedback.textContent = "Excellent! That's correct!";
+                resultFeedback.className = "feedback-display feedback-correct";
+            } else {
+                resultFeedback.textContent = "Not quite. Try again!";
+                resultFeedback.className = "feedback-display feedback-incorrect";
+                // Could add more detailed diff here later
+            }
+        }
+
+        // Event Listeners for buttons
+        if(speakButton) speakButton.addEventListener('click', speakSentence);
+        if(recordButton) recordButton.addEventListener('click', handleRecordButtonClick); 
+
+        if(nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!sentences || sentences.length === 0) return; 
+                if (isRecording) stopAudioAndSpeechRecognition(); // Stop if recording
+                if (synthesis && synthesis.speaking) synthesis.cancel(); // Stop if speaking
+
+                currentSentenceIndex = (currentSentenceIndex + 1) % sentences.length;
+                displaySentence(); 
+                
+                // Re-enable buttons that might have been disabled
+                speakButton.disabled = false; 
+                recordButton.disabled = false; 
+            });
+        }
+
+        // --- Initial Setup ---
+        loadSentencesFromStorage();
+        // Initial display of sentence. Voices for TTS might load asynchronously.
+        // So, we call displaySentence. If voices are not ready, speakSentence might use a default.
+        // If synthesis is available and voices are not yet loaded, onvoiceschanged will handle it.
+        // Otherwise, if voices are already loaded or synthesis is not available, display immediately.
+        if (synthesis && typeof synthesis.onvoiceschanged !== 'undefined' && synthesis.getVoices().length === 0) {
+            // Waiting for voices to load, onvoiceschanged will eventually call displaySentence or it's called after timeout
+            // However, it's better to display something initially.
+            displaySentence(); // Display with potentially no specific voice yet
+        } else {
+            displaySentence(); // Display immediately
+        }
+         // Ensure student mode is active by default if teacher mode was last active and page reloaded
+        if (teacherModeContainer.classList.contains('hidden')) {
+            currentMode = 'student';
+            toggleModeButton.textContent = 'Switch to Teacher Mode';
+        } else {
+            currentMode = 'teacher';
+            toggleModeButton.textContent = 'Switch to Student Mode';
+        }
 
     </script>
 </body>
