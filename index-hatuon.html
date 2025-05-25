@@ -13,23 +13,28 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            background-color: #f3f4f6;
-            color: #374151;
+            background-color: #f3f4f6; /* bg-gray-100 */
+            color: #374151; /* text-gray-700 */
             padding: 1rem;
             text-align: center;
         }
         .container {
             background-color: white;
-            padding: 2rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 1rem; /* Default padding for small screens */
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
             width: 100%;
             max-width: 700px;
             margin-top: 1rem;
         }
+        @media (min-width: 640px) { /* sm breakpoint */
+            .container {
+                padding: 2rem; /* Original padding for larger screens */
+            }
+        }
         .btn {
             padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
+            border-radius: 0.5rem; /* rounded-md */
             font-weight: 600;
             transition: background-color 0.3s, transform 0.1s;
             cursor: pointer;
@@ -44,21 +49,20 @@
         .btn:focus {
             outline: 2px solid transparent;
             outline-offset: 2px;
-            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5);
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); /* ring-2 ring-blue-400 ring-opacity-50 */
         }
-        .btn-primary { background-color: #3b82f6; color: white; }
-        .btn-primary:hover:not(:disabled) { background-color: #2563eb; }
-        .btn-secondary { background-color: #6b7280; color: white; }
-        .btn-secondary:hover:not(:disabled) { background-color: #4b5563; }
-        .btn-success { background-color: #10b981; color: white; }
-        .btn-success:hover:not(:disabled) { background-color: #059669; }
-        .btn-danger { background-color: #ef4444; color: white; }
-        .btn-danger:hover:not(:disabled) { background-color: #dc2626; }
-        .btn-warning { background-color: #f59e0b; color: white; }
-        .btn-warning:hover:not(:disabled) { background-color: #d97706; }
-        .btn-info { background-color: #38bdf8; color: white; } /* Tailwind sky-400 */
-        .btn-info:hover:not(:disabled) { background-color: #0ea5e9; } /* Tailwind sky-500 */
-
+        .btn-primary { background-color: #3b82f6; color: white; } /* bg-blue-500 */
+        .btn-primary:hover:not(:disabled) { background-color: #2563eb; } /* hover:bg-blue-600 */
+        .btn-secondary { background-color: #6b7280; color: white; } /* bg-gray-500 */
+        .btn-secondary:hover:not(:disabled) { background-color: #4b5563; } /* hover:bg-gray-600 */
+        .btn-success { background-color: #10b981; color: white; } /* bg-green-500 */
+        .btn-success:hover:not(:disabled) { background-color: #059669; } /* hover:bg-green-600 */
+        .btn-danger { background-color: #ef4444; color: white; } /* bg-red-500 */
+        .btn-danger:hover:not(:disabled) { background-color: #dc2626; } /* hover:bg-red-600 */
+        .btn-warning { background-color: #f59e0b; color: white; } /* bg-yellow-500 */
+        .btn-warning:hover:not(:disabled) { background-color: #d97706; } /* hover:bg-yellow-600 */
+        .btn-info { background-color: #38bdf8; color: white; } /* bg-sky-400 */
+        .btn-info:hover:not(:disabled) { background-color: #0ea5e9; } /* hover:bg-sky-500 */
 
         .sentence-display { font-size: 1.5rem; font-weight: 500; margin-bottom: 1.5rem; padding: 1rem; background-color: #e5e7eb; border-radius: 0.5rem; min-height: 100px; display: flex; align-items: center; justify-content: center; }
         .recognized-text-display { font-size: 1.125rem; margin-top: 1rem; padding: 0.75rem; background-color: #f9fafb; border: 1px solid #d1d5db; border-radius: 0.5rem; min-height: 60px; color: #4b5563; }
@@ -70,14 +74,65 @@
 
         .teacher-mode-container { border-top: 2px solid #3b82f6; margin-top: 2rem; padding-top: 1.5rem; }
         .sentence-list-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; margin-bottom: 0.5rem; background-color: #f9fafb; }
-        .sentence-text { flex-grow: 1; text-align: left; margin-right: 1rem; }
-        .sentence-actions button { margin-left: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.875rem; }
+        .sentence-text { flex-grow: 1; text-align: left; margin-right: 1rem; word-break: break-word; }
+        .sentence-actions button {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+        }
         .add-sentence-form textarea { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.5rem; min-height: 80px; margin-bottom: 0.5rem;}
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
-        .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 0.5rem; }
-        .modal-content textarea { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.5rem; min-height: 100px; margin-bottom: 1rem;}
-        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .close-btn:hover, .close-btn:focus { color: black; text-decoration: none; }
+        
+        /* Modal Styles */
+        .modal {
+            display: none; 
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.4);
+            align-items: center; 
+            justify-content: center; 
+            padding: 1rem; 
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto; 
+            padding: 20px; 
+            border: 1px solid #d1d5db; 
+            width: 90%; 
+            max-width: 500px; 
+            border-radius: 0.5rem; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-height: 90vh; 
+            overflow-y: auto; 
+            text-align: left; 
+        }
+        .modal-content.text-center {
+             text-align: center;
+        }
+        .modal-content textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            min-height: 100px;
+            margin-bottom: 1rem;
+        }
+        .close-btn {
+            color: #aaa;
+            float: right; 
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1; 
+        }
+        .close-btn:hover,
+        .close-btn:focus {
+            color: black;
+            text-decoration: none;
+        }
         .audio-player-container { margin-top: 1rem; }
     </style>
 </head>
@@ -89,17 +144,17 @@
     <div class="container" id="student-mode-container">
         <h1 class="text-3xl font-bold mb-6 text-center text-blue-600">英語発音練習</h1>
         <div id="sentence-display" class="sentence-display"></div>
-        <div class="flex flex-wrap justify-center items-center mb-4">
+        <div class="flex flex-col sm:flex-row sm:flex-wrap justify-center items-center gap-3 mb-4">
             <button id="speak-btn" class="btn btn-primary">例文を読み上げる</button>
             <button id="record-btn" class="btn btn-success">発音を録音する</button>
             <button id="play-recorded-audio-btn" class="btn btn-info" disabled>自分の発音を再生</button>
         </div>
-        <div id="status-message" class="status-message"></div>
+        <div id="status-message" class="status-message text-center"></div>
         <div class="mt-4">
-            <h2 class="text-xl font-semibold mb-2">あなたが発音した内容 (テキスト):</h2>
+            <h2 class="text-xl font-semibold mb-2 text-center sm:text-left">あなたが発音した内容 (テキスト):</h2>
             <div id="recognized-text" class="recognized-text-display"></div>
         </div>
-        <div id="result-feedback" class="feedback-display"></div>
+        <div id="result-feedback" class="feedback-display text-center"></div>
         <div class="audio-player-container">
             <audio id="recorded-audio-player" controls class="w-full hidden"></audio>
         </div>
@@ -118,8 +173,8 @@
         <div>
             <h2 class="text-xl font-semibold mb-2 text-left">登録済み問題文リスト</h2>
             <div id="sentence-list" class="space-y-2">
-                </div>
-            <p id="no-sentences-message" class="text-gray-500 mt-4 hidden">登録されている問題文はありません。</p>
+            </div>
+            <p id="no-sentences-message" class="text-gray-500 mt-4 hidden text-center sm:text-left">登録されている問題文はありません。</p>
         </div>
     </div>
 
@@ -128,36 +183,55 @@
             <span class="close-btn" id="close-edit-modal-btn">&times;</span>
             <h2 class="text-xl font-semibold mb-4">問題文を編集</h2>
             <textarea id="edit-sentence-input"></textarea>
-            <button id="save-edit-btn" class="btn btn-primary">保存する</button>
+            <div class="flex justify-end mt-2">
+                 <button id="save-edit-btn" class="btn btn-primary">保存する</button>
+            </div>
         </div>
     </div>
 
-    <p class="footer-note">
+    <div id="notification-modal" class="modal">
+        <div class="modal-content text-center"> <span class="close-btn" id="close-notification-modal-btn">&times;</span>
+            <p id="notification-message" class="text-lg my-4 py-4"></p>
+            <button id="ok-notification-btn" class="btn btn-primary w-full sm:w-auto">OK</button>
+        </div>
+    </div>
+
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content text-center"> <p id="confirmation-message" class="text-lg my-4 py-4"></p>
+            <div class="flex flex-col sm:flex-row justify-center sm:justify-end gap-3 mt-4">
+                <button id="confirm-yes-btn" class="btn btn-danger order-1 sm:order-2">はい</button>
+                <button id="confirm-no-btn" class="btn btn-secondary order-2 sm:order-1">いいえ</button>
+            </div>
+        </div>
+    </div>
+
+    <p class="footer-note text-center">
         このアプリはブラウザのWeb Speech APIを使用しています。最高の体験を得るには、最新版のGoogle Chromeをご利用ください。マイクの使用許可が必要です。
     </p>
 
     <script>
+        // Default sentences if nothing in localStorage
         const defaultSentences = [
             "Today is a sunny day. I enjoy learning new things. I enjoy learning new things.",
             "My favorite season is spring. Many flowers bloom in spring. I like to see cherry blossoms.",
             "I will go to the library tomorrow. I want to borrow some interesting books. Reading books is a good hobby."
         ];
-        let sentences = [];
+        let sentences = []; // Holds the current list of sentences
 
-        let currentSentenceIndex = 0;
-        let speechRecognition;
-        let synthesis = window.speechSynthesis;
-        let englishVoice = null;
-        let micPermissionGranted = false;
-        let currentMode = 'student';
-        let editingSentenceIndex = -1;
+        let currentSentenceIndex = 0; // Index of the sentence being practiced
+        let speechRecognition; // SpeechRecognition API object
+        let synthesis = window.speechSynthesis; // SpeechSynthesis API object
+        let englishVoice = null; // Stores the preferred English voice for synthesis
+        let micPermissionGranted = false; // Flag for microphone permission
+        let currentMode = 'student'; // 'student' or 'teacher'
+        let editingSentenceIndex = -1; // Index of sentence being edited in teacher mode
 
-        let mediaRecorder;
-        let audioChunks = [];
-        let recordedAudioBlob = null;
-        let isRecording = false;
+        let mediaRecorder; // MediaRecorder API object for audio recording
+        let audioChunks = []; // Array to store audio data chunks
+        let recordedAudioBlob = null; // Blob of the recorded audio
+        let isRecording = false; // Flag to indicate if recording is in progress
 
-        // DOM Elements
+        // --- DOM Elements ---
         const sentenceDisplay = document.getElementById('sentence-display');
         const speakButton = document.getElementById('speak-btn');
         const recordButton = document.getElementById('record-btn');
@@ -168,28 +242,80 @@
         const nextButton = document.getElementById('next-btn');
         const statusMessage = document.getElementById('status-message');
 
+        // Mode toggle elements
         const toggleModeButton = document.getElementById('toggle-mode-btn');
         const studentModeContainer = document.getElementById('student-mode-container');
         const teacherModeContainer = document.getElementById('teacher-mode-container');
+
+        // Teacher mode elements
         const newSentenceText = document.getElementById('new-sentence-text');
         const addSentenceButton = document.getElementById('add-sentence-btn');
         const sentenceList = document.getElementById('sentence-list');
         const noSentencesMessage = document.getElementById('no-sentences-message');
 
+        // Edit modal elements
         const editModal = document.getElementById('edit-modal');
         const closeEditModalButton = document.getElementById('close-edit-modal-btn');
         const editSentenceInput = document.getElementById('edit-sentence-input');
         const saveEditButton = document.getElementById('save-edit-btn');
 
+        // Notification Modal elements
+        const notificationModal = document.getElementById('notification-modal');
+        const closeNotificationModalButton = document.getElementById('close-notification-modal-btn');
+        const notificationMessage = document.getElementById('notification-message');
+        const okNotificationButton = document.getElementById('ok-notification-btn');
+
+        // Confirmation Modal elements
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const confirmationMessage = document.getElementById('confirmation-message');
+        const confirmYesButton = document.getElementById('confirm-yes-btn');
+        const confirmNoButton = document.getElementById('confirm-no-btn');
+        let confirmActionCallback = null; // Callback for confirmation result
+
+        // --- Utility Functions for Modals ---
+        function showNotification(message) {
+            notificationMessage.textContent = message;
+            notificationModal.style.display = 'flex';
+        }
+
+        closeNotificationModalButton.addEventListener('click', () => notificationModal.style.display = 'none');
+        okNotificationButton.addEventListener('click', () => notificationModal.style.display = 'none');
+        window.addEventListener('click', (event) => { 
+            if (event.target == notificationModal) {
+                notificationModal.style.display = 'none';
+            }
+            if (event.target == editModal) { 
+                closeEditModal();
+            }
+        });
+
+        function showConfirmation(message, callback) {
+            confirmationMessage.textContent = message;
+            confirmActionCallback = callback;
+            confirmationModal.style.display = 'flex';
+        }
+
+        confirmYesButton.addEventListener('click', () => {
+            confirmationModal.style.display = 'none';
+            if (confirmActionCallback) confirmActionCallback(true);
+        });
+
+        confirmNoButton.addEventListener('click', () => {
+            confirmationModal.style.display = 'none';
+            if (confirmActionCallback) confirmActionCallback(false);
+        });
+
+
+        // --- Local Storage and Sentence Management ---
         function loadSentencesFromStorage() {
             const storedSentences = localStorage.getItem('pronunciationAppSentences');
             if (storedSentences) {
                 sentences = JSON.parse(storedSentences);
             } else {
-                sentences = [...defaultSentences];
+                sentences = [...defaultSentences]; 
                 saveSentencesToStorage();
             }
-            if (sentences.length === 0) {
+            if (!sentences || sentences.length === 0) {
                 sentences = [...defaultSentences];
                 saveSentencesToStorage();
             }
@@ -199,48 +325,56 @@
             localStorage.setItem('pronunciationAppSentences', JSON.stringify(sentences));
         }
 
+        // --- Mode Toggling ---
         function toggleMode() {
             if (currentMode === 'student') {
                 currentMode = 'teacher';
-                toggleModeButton.textContent = '学習者モードへ';
+                toggleModeButton.textContent = '学習者モードへ'; 
                 studentModeContainer.classList.add('hidden');
                 teacherModeContainer.classList.remove('hidden');
-                renderSentenceList();
+                renderSentenceList(); 
             } else {
                 currentMode = 'student';
-                toggleModeButton.textContent = '教師管理モードへ';
+                toggleModeButton.textContent = '教師管理モードへ'; 
                 studentModeContainer.classList.remove('hidden');
                 teacherModeContainer.classList.add('hidden');
-                loadSentencesFromStorage();
-                currentSentenceIndex = 0;
-                displaySentence();
+                loadSentencesFromStorage(); 
+                currentSentenceIndex = 0; 
+                displaySentence(); 
             }
         }
-        toggleModeButton.addEventListener('click', toggleMode);
+        if(toggleModeButton) toggleModeButton.addEventListener('click', toggleMode);
 
+        // --- Teacher Mode Functions ---
         function renderSentenceList() {
-            sentenceList.innerHTML = '';
+            sentenceList.innerHTML = ''; 
             if (sentences.length === 0) {
                 noSentencesMessage.classList.remove('hidden');
                 return;
             }
             noSentencesMessage.classList.add('hidden');
+
             sentences.forEach((sentence, index) => {
                 const listItem = document.createElement('div');
                 listItem.className = 'sentence-list-item';
+
                 const textSpan = document.createElement('span');
                 textSpan.className = 'sentence-text';
-                textSpan.textContent = sentence.length > 50 ? sentence.substring(0, 50) + '...' : sentence;
+                textSpan.textContent = sentence.length > 60 ? sentence.substring(0, 60) + '...' : sentence; 
+                
                 const actionsDiv = document.createElement('div');
-                actionsDiv.className = 'sentence-actions';
+                actionsDiv.className = 'sentence-actions flex items-center flex-wrap gap-2 justify-end'; 
+
                 const editBtn = document.createElement('button');
-                editBtn.className = 'btn btn-warning';
-                editBtn.textContent = '編集';
+                editBtn.className = 'btn btn-warning btn-sm'; 
+                editBtn.textContent = '編集'; 
                 editBtn.onclick = () => openEditModal(index);
+
                 const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'btn btn-danger';
-                deleteBtn.textContent = '削除';
+                deleteBtn.className = 'btn btn-danger btn-sm'; 
+                deleteBtn.textContent = '削除'; 
                 deleteBtn.onclick = () => deleteSentence(index);
+
                 actionsDiv.appendChild(editBtn);
                 actionsDiv.appendChild(deleteBtn);
                 listItem.appendChild(textSpan);
@@ -255,39 +389,39 @@
                 sentences.push(text);
                 saveSentencesToStorage();
                 renderSentenceList();
-                newSentenceText.value = '';
-                alert('問題文が追加されました。');
+                newSentenceText.value = ''; 
+                showNotification('問題文が追加されました。'); 
             } else {
-                alert('問題文を入力してください。');
+                showNotification('問題文を入力してください。'); 
             }
         }
-        addSentenceButton.addEventListener('click', addSentence);
+        if(addSentenceButton) addSentenceButton.addEventListener('click', addSentence);
 
         function deleteSentence(index) {
-            if (confirm(`「${sentences[index].substring(0,20)}...」を削除してもよろしいですか？`)) {
-                sentences.splice(index, 1);
-                saveSentencesToStorage();
-                renderSentenceList();
-                alert('問題文が削除されました。');
-            }
+            const sentenceToDelete = sentences[index];
+            const confirmationPrompt = `「${sentenceToDelete.substring(0, 20)}...」を削除してもよろしいですか？`; 
+            
+            showConfirmation(confirmationPrompt, (confirmed) => {
+                if (confirmed) {
+                    sentences.splice(index, 1);
+                    saveSentencesToStorage();
+                    renderSentenceList();
+                    showNotification('問題文が削除されました。'); 
+                }
+            });
         }
 
         function openEditModal(index) {
             editingSentenceIndex = index;
             editSentenceInput.value = sentences[index];
-            editModal.style.display = 'block';
+            editModal.style.display = 'flex'; 
         }
 
         function closeEditModal() {
             editModal.style.display = 'none';
-            editingSentenceIndex = -1;
+            editingSentenceIndex = -1; 
         }
-        closeEditModalButton.addEventListener('click', closeEditModal);
-        window.addEventListener('click', (event) => {
-            if (event.target == editModal) {
-                closeEditModal();
-            }
-        });
+        if(closeEditModalButton) closeEditModalButton.addEventListener('click', closeEditModal);
 
         function saveEditedSentence() {
             const newText = editSentenceInput.value.trim();
@@ -296,65 +430,89 @@
                 saveSentencesToStorage();
                 renderSentenceList();
                 closeEditModal();
-                alert('問題文が更新されました。');
+                showNotification('問題文が更新されました。'); 
             } else if (!newText) {
-                 alert('問題文を入力してください。');
+                 showNotification('問題文を入力してください。'); 
             }
         }
-        saveEditButton.addEventListener('click', saveEditedSentence);
+        if(saveEditButton) saveEditButton.addEventListener('click', saveEditedSentence);
 
         // --- Student Mode (Pronunciation App) Functions ---
         if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            speechRecognition = new SpeechRecognition();
-            speechRecognition.continuous = false;
-            speechRecognition.lang = 'en-US';
-            speechRecognition.interimResults = false;
-            speechRecognition.maxAlternatives = 1;
+            const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+            speechRecognition = new SpeechRecognitionAPI();
+            speechRecognition.continuous = false; 
+            speechRecognition.lang = 'en-US';    
+            speechRecognition.interimResults = false; 
+            speechRecognition.maxAlternatives = 1;  
+
+            speechRecognition.onstart = () => {
+                statusMessage.textContent = "マイクで話してください..."; // Listening... Speak into the microphone.
+                recognizedTextDisplay.textContent = ""; 
+                resultFeedback.textContent = "";      
+            };
+
+            speechRecognition.onspeechstart = () => {
+                statusMessage.textContent = "音声を検出しました。処理中..."; // Speech detected. Processing...
+            };
+
+            speechRecognition.onspeechend = () => {
+                statusMessage.textContent = "音声の検出が終了しました。認識結果を待っています..."; // Speech detection ended. Awaiting recognition...
+            };
+            
+            speechRecognition.onnomatch = () => {
+                statusMessage.textContent = "音声を認識できませんでした。もう一度お試しください。"; // Could not recognize speech. Please try again.
+                recognizedTextDisplay.textContent = "";
+                resultFeedback.textContent = "";
+                if (isRecording) {
+                    stopAudioRecording(); 
+                } else {
+                    if(recordButton) {
+                        recordButton.textContent = "発音を録音する";
+                        recordButton.disabled = false;
+                    }
+                    if(speakButton) speakButton.disabled = false;
+                    if(nextButton) nextButton.disabled = sentences.length <= 1;
+                }
+            };
 
             speechRecognition.onresult = (event) => {
                 const recognized = event.results[0][0].transcript;
                 recognizedTextDisplay.textContent = recognized;
-                // statusMessage.textContent = "認識完了"; // 録音停止時に更新するのでここでは不要かも
                 comparePronunciation(sentences[currentSentenceIndex], recognized);
+                // Note: onend will fire after this, which will call stopAudioRecording if isRecording is true
             };
 
             speechRecognition.onerror = (event) => {
                 console.error("Speech recognition error:", event.error, event.message);
-                let errorMessage = "音声認識エラーが発生しました。";
-                if (event.error === 'no-speech') errorMessage = "音声が検出されませんでした。";
-                else if (event.error === 'audio-capture') errorMessage = "マイクへのアクセスに問題があります。";
+                let errorMessage = "音声認識エラーが発生しました。"; 
+                if (event.error === 'no-speech') errorMessage = "音声が検出されませんでした。"; 
+                else if (event.error === 'audio-capture') errorMessage = "マイクへのアクセスに問題があります。"; 
                 else if (event.error === 'not-allowed') {
-                    errorMessage = "マイクの使用が許可されていません。";
+                    errorMessage = "マイクの使用が許可されていません。"; 
                     micPermissionGranted = false;
-                    if (isRecording) stopAudioRecording(); // 強制停止
+                    if (isRecording) stopAudioRecording(); 
                 }
-                else if (event.error === 'network') errorMessage = "ネットワークエラーが発生しました。";
-                else errorMessage = `予期せぬエラー: ${event.error}`;
+                else if (event.error === 'network') errorMessage = "ネットワークエラーが発生しました。"; 
+                else errorMessage = `予期せぬエラー: ${event.error}`; 
                 
                 statusMessage.textContent = errorMessage;
                 recognizedTextDisplay.textContent = "";
                 resultFeedback.textContent = "";
-                if (isRecording) stopAudioRecording(); // エラー時も録音停止
-                recordButton.textContent = "発音を録音する";
-                recordButton.disabled = false;
-            };
-
-            speechRecognition.onstart = () => {
-                // statusMessage.textContent = "マイクで話してください..."; // 録音開始時に更新
-                recognizedTextDisplay.textContent = "";
-                resultFeedback.textContent = "";
+                if (isRecording) stopAudioRecording(); 
+                if(recordButton) {
+                    recordButton.textContent = "発音を録音する"; 
+                    recordButton.disabled = false;
+                }
             };
             
             speechRecognition.onend = () => {
-                // This event fires when recognition service has disconnected.
-                // May not need to do much here if stopAudioRecording handles UI updates.
-                if (isRecording) { // 予期せず終了した場合
+                if (isRecording) { 
                     stopAudioRecording();
                 }
             };
         } else {
-            statusMessage.textContent = "お使いのブラウザは音声認識をサポートしていません。";
+            statusMessage.textContent = "お使いのブラウザは音声認識をサポートしていません。"; 
             if(speakButton) speakButton.disabled = true;
             if(recordButton) recordButton.disabled = true;
             if(nextButton) nextButton.disabled = true;
@@ -364,74 +522,79 @@
         if ('speechSynthesis' in window) {
             synthesis.onvoiceschanged = () => {
                 const voices = synthesis.getVoices();
-                englishVoice = voices.find(voice => voice.lang.startsWith('en-') && voice.name.includes('Google US English')) ||
-                               voices.find(voice => voice.lang.startsWith('en-') && voice.default) ||
-                               voices.find(voice => voice.lang.startsWith('en-'));
-                if (!englishVoice) console.warn("英語の音声が見つかりませんでした。");
-                displaySentence(); 
+                englishVoice = voices.find(voice => voice.lang.startsWith('en-') && voice.name.includes('Google US English')) || 
+                               voices.find(voice => voice.lang.startsWith('en-') && voice.default) || 
+                               voices.find(voice => voice.lang.startsWith('en-')); 
+                if (!englishVoice) console.warn("英語の音声が見つかりませんでした。"); 
+                if (currentMode === 'student') displaySentence(); 
             };
             if (synthesis.getVoices().length > 0) {
                  synthesis.onvoiceschanged();
             }
         } else {
-            statusMessage.textContent = "お使いのブラウザは音声合成をサポートしていません。";
+            statusMessage.textContent = "お使いのブラウザは音声合成をサポートしていません。"; 
             if(speakButton) speakButton.disabled = true;
-            displaySentence();
+            if (currentMode === 'student') displaySentence(); 
         }
 
         function displaySentence() {
-            if (sentences && sentences.length > 0) {
+            if (sentenceDisplay && sentences && sentences.length > 0 && currentSentenceIndex < sentences.length) {
                 sentenceDisplay.textContent = sentences[currentSentenceIndex];
-                nextButton.disabled = sentences.length <= 1;
-            } else {
-                sentenceDisplay.textContent = "練習用の問題文がありません。教師管理モードで追加してください。";
-                nextButton.disabled = true; 
+                if(nextButton) nextButton.disabled = sentences.length <= 1;
+            } else if (sentenceDisplay) {
+                sentenceDisplay.textContent = "練習用の問題文がありません。教師管理モードで追加してください。"; 
+                if(nextButton) nextButton.disabled = true; 
             }
-            recognizedTextDisplay.textContent = "";
-            resultFeedback.textContent = "";
-            playRecordedAudioButton.disabled = true; // 新しい問題になったら再生ボタンを無効化
-            recordedAudioPlayer.classList.add('hidden'); // プレーヤーも隠す
-            recordedAudioPlayer.src = ''; // ソースもクリア
-            if (statusMessage) statusMessage.textContent = "準備完了";
+            if(recognizedTextDisplay) recognizedTextDisplay.textContent = "";
+            if(resultFeedback) resultFeedback.textContent = "";
+            if(playRecordedAudioButton) playRecordedAudioButton.disabled = true; 
+            if(recordedAudioPlayer) {
+                recordedAudioPlayer.classList.add('hidden');
+                recordedAudioPlayer.src = ''; 
+            }
+            if (statusMessage && !isRecording) statusMessage.textContent = "準備完了"; // Only set to ready if not actively recording
         }
 
         function speakSentence() {
-            if (!synthesis || !('speak' in synthesis) || !sentences || sentences.length === 0) { 
-                statusMessage.textContent = "音声合成が利用できません、または例文がありません。";
+            if (!synthesis || !('speak'in synthesis) || !sentences || sentences.length === 0) { 
+                statusMessage.textContent = "音声合成が利用できません、または例文がありません。"; 
                 return;
             }
-            if (synthesis.speaking) synthesis.cancel();
+            if (synthesis.speaking) synthesis.cancel(); 
 
             const utterance = new SpeechSynthesisUtterance(sentences[currentSentenceIndex]);
             if (englishVoice) utterance.voice = englishVoice;
-            utterance.lang = 'en-US';
+            utterance.lang = 'en-US'; 
             utterance.pitch = 1;
             utterance.rate = 0.9; 
             
             utterance.onstart = () => {
-                statusMessage.textContent = "例文を読み上げています...";
-                speakButton.disabled = true;
-                recordButton.disabled = true;
-                playRecordedAudioButton.disabled = true;
+                statusMessage.textContent = "例文を読み上げています..."; 
+                if(speakButton) speakButton.disabled = true;
+                if(recordButton) recordButton.disabled = true;
+                if(playRecordedAudioButton) playRecordedAudioButton.disabled = true;
             };
             utterance.onend = () => {
-                statusMessage.textContent = "読み上げ完了";
-                speakButton.disabled = false;
-                if (micPermissionGranted || speechRecognition) recordButton.disabled = false;
-                // 録音済み音声があれば再生ボタンを有効にするかは状況による (ここでは読み上げ後は一旦そのまま)
+                statusMessage.textContent = "読み上げ完了"; 
+                if(speakButton) speakButton.disabled = false;
+                if (micPermissionGranted || speechRecognition) { 
+                     if(recordButton) recordButton.disabled = false;
+                }
             };
             utterance.onerror = (event) => {
                 console.error("Speech synthesis error:", event.error);
-                statusMessage.textContent = "読み上げエラーが発生しました。";
-                speakButton.disabled = false;
-                if (micPermissionGranted || speechRecognition) recordButton.disabled = false;
+                statusMessage.textContent = "読み上げエラーが発生しました。"; 
+                if(speakButton) speakButton.disabled = false;
+                if (micPermissionGranted || speechRecognition) {
+                    if(recordButton) recordButton.disabled = false;
+                }
             };
             synthesis.speak(utterance);
         }
         
         async function handleRecordButtonClick() {
             if (!speechRecognition || !sentences || sentences.length === 0) {
-                statusMessage.textContent = "音声認識が利用できません、または例文がありません。";
+                statusMessage.textContent = "音声認識が利用できません、または例文がありません。"; 
                 return;
             }
 
@@ -447,65 +610,66 @@
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     micPermissionGranted = true;
-                    // MediaRecorderのセットアップはストリーム取得後に行う
-                    setupMediaRecorder(stream);
-                     // ストリームはMediaRecorderが使うので、ここでは閉じない
+                    setupMediaRecorder(stream); 
                 } catch (err) {
                     console.error("Error requesting microphone permission:", err);
                     micPermissionGranted = false;
                     if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                        statusMessage.textContent = "マイクの使用が許可されませんでした。";
+                        statusMessage.textContent = "マイクの使用が許可されませんでした。"; 
                     } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-                        statusMessage.textContent = "使用可能なマイクが見つかりませんでした。";
+                        statusMessage.textContent = "使用可能なマイクが見つかりませんでした。"; 
                     } else {
-                        statusMessage.textContent = "マイクへのアクセス中にエラーが発生しました。";
+                        statusMessage.textContent = "マイクへのアクセス中にエラーが発生しました。"; 
                     }
-                    return; // マイク許可がない場合はここで終了
+                    return; 
                 }
             } else {
-                 // 既に許可がある場合は、再度ストリームを取得してMediaRecorderをセットアップ
-                 // (以前のストリームが閉じられている可能性があるため)
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     setupMediaRecorder(stream);
                 } catch (err) {
                     console.error("Error re-getting microphone stream:", err);
-                    statusMessage.textContent = "マイクの再取得に失敗しました。";
+                    statusMessage.textContent = "マイクの再取得に失敗しました。"; 
                     return;
                 }
             }
 
-            if (!mediaRecorder) { // setupMediaRecorderが失敗した場合
-                statusMessage.textContent = "録音機能の初期化に失敗しました。";
+            if (!mediaRecorder) { 
+                statusMessage.textContent = "録音機能の初期化に失敗しました。"; 
                 return;
             }
 
-            audioChunks = [];
-            recordedAudioBlob = null;
-            playRecordedAudioButton.disabled = true;
-            recordedAudioPlayer.classList.add('hidden');
-            recordedAudioPlayer.src = '';
+            audioChunks = []; 
+            recordedAudioBlob = null; 
+            if(playRecordedAudioButton) playRecordedAudioButton.disabled = true;
+            if(recordedAudioPlayer) {
+                recordedAudioPlayer.classList.add('hidden');
+                recordedAudioPlayer.src = '';
+            }
 
             try {
                 mediaRecorder.start();
-                speechRecognition.start(); // 音声認識も開始
+                speechRecognition.start(); 
                 isRecording = true;
-                recordButton.textContent = "録音停止";
-                recordButton.classList.remove('btn-success');
-                recordButton.classList.add('btn-danger');
-                statusMessage.textContent = "録音中... マイクで話してください。";
-                speakButton.disabled = true; // 録音中は例文読み上げを無効化
-                nextButton.disabled = true; // 録音中は次へボタンを無効化
+                if(recordButton) {
+                    recordButton.textContent = "録音停止"; 
+                    recordButton.classList.remove('btn-success');
+                    recordButton.classList.add('btn-danger');
+                }
+                // speechRecognition.onstart will set the status message
+                if(speakButton) speakButton.disabled = true; 
+                if(nextButton) nextButton.disabled = true;
             } catch (e) {
                 console.error("Error starting recording:", e);
-                statusMessage.textContent = "録音開始に失敗しました。";
-                isRecording = false; // 状態をリセット
-                recordButton.textContent = "発音を録音する";
-                recordButton.classList.remove('btn-danger');
-                recordButton.classList.add('btn-success');
-                speakButton.disabled = false;
-                nextButton.disabled = sentences.length <= 1;
-
+                statusMessage.textContent = "録音開始に失敗しました。"; 
+                isRecording = false; 
+                if(recordButton) {
+                    recordButton.textContent = "発音を録音する"; 
+                    recordButton.classList.remove('btn-danger');
+                    recordButton.classList.add('btn-success');
+                }
+                if(speakButton) speakButton.disabled = false;
+                if(nextButton && sentences) nextButton.disabled = sentences.length <= 1;
             }
         }
 
@@ -516,57 +680,70 @@
                     audioChunks.push(event.data);
                 };
                 mediaRecorder.onstop = () => {
-                    recordedAudioBlob = new Blob(audioChunks, { type: 'audio/webm' }); // または 'audio/ogg; codecs=opus' など
+                    recordedAudioBlob = new Blob(audioChunks, { type: 'audio/webm' }); 
                     const audioUrl = URL.createObjectURL(recordedAudioBlob);
-                    recordedAudioPlayer.src = audioUrl;
-                    playRecordedAudioButton.disabled = false;
-                    // recordedAudioPlayer.classList.remove('hidden'); // 自動再生しないので、ここでは表示しない
-                     // MediaRecorderが使っていたストリームのトラックを停止
+                    if(recordedAudioPlayer) recordedAudioPlayer.src = audioUrl;
+                    if(playRecordedAudioButton) playRecordedAudioButton.disabled = false; 
                     stream.getTracks().forEach(track => track.stop());
                 };
                  mediaRecorder.onerror = (event) => {
                     console.error("MediaRecorder error:", event.error);
-                    statusMessage.textContent = "録音中にエラーが発生しました。";
-                    if (isRecording) stopAudioRecording(); // エラー発生時も録音停止処理を試みる
+                    statusMessage.textContent = "録音中にエラーが発生しました。"; 
+                    if (isRecording) stopAudioRecording(); 
                 };
             } catch (e) {
                 console.error("Error setting up MediaRecorder:", e);
-                statusMessage.textContent = "録音機能のセットアップに失敗しました。ブラウザが対応していない可能性があります。";
-                mediaRecorder = null; // エラー時はnullに設定
+                statusMessage.textContent = "録音機能のセットアップに失敗しました。ブラウザが対応していない可能性があります。"; 
+                mediaRecorder = null; 
             }
         }
-
 
         function stopAudioRecording() {
             if (mediaRecorder && mediaRecorder.state !== "inactive") {
                 mediaRecorder.stop();
             }
-            if (speechRecognition && isRecording) { // isRecording で speechRecognition.stop の多重呼び出しを避ける
+            
+            // Only try to stop speechRecognition if it's considered active by our 'isRecording' flag.
+            // This helps prevent errors if it stopped on its own (e.g. 'no-speech' error, or natural end).
+            if (speechRecognition && isRecording) { 
                 try {
-                    speechRecognition.stop(); // 音声認識も停止
+                    speechRecognition.stop(); 
                 } catch (e) {
-                    console.warn("Error stopping speech recognition:", e);
+                    // console.warn("Error stopping speech recognition (might be already stopped):", e);
                 }
             }
-            isRecording = false;
-            recordButton.textContent = "発音を録音する";
-            recordButton.classList.remove('btn-danger');
-            recordButton.classList.add('btn-success');
-            recordButton.disabled = false; // 停止後は再度録音可能に
-            statusMessage.textContent = "録音完了。認識結果を確認してください。";
-            speakButton.disabled = false; // 例文読み上げを有効化
-            nextButton.disabled = sentences.length <= 1; // 次へボタンを有効化
+            isRecording = false; // Crucial: set isRecording to false *before* updating UI that depends on it.
+
+            if(recordButton) {
+                recordButton.textContent = "発音を録音する"; 
+                recordButton.classList.remove('btn-danger');
+                recordButton.classList.add('btn-success');
+                recordButton.disabled = false; 
+            }
+            // Set status message only if it hasn't been set by a more specific event like onresult or onerror.
+            // However, if speech was successful, onresult would have set feedback, and onend calls this.
+            // If an error occurred, onerror would set the message.
+            // If no match, onnomatch sets the message.
+            // So, this message might be for cases where it just stops.
+            if (statusMessage.textContent.includes("待っています") || statusMessage.textContent.includes("処理中") || statusMessage.textContent.includes("マイクで話して")) {
+                 statusMessage.textContent = "録音完了。"; // Recording complete.
+            }
+
+
+            if(speakButton) speakButton.disabled = false; 
+            if(nextButton && sentences) nextButton.disabled = sentences.length <= 1;
         }
         
-        playRecordedAudioButton.addEventListener('click', () => {
-            if (recordedAudioPlayer.src && recordedAudioBlob) {
-                recordedAudioPlayer.classList.remove('hidden'); // 再生時に表示
-                recordedAudioPlayer.play();
-            } else {
-                statusMessage.textContent = "再生する録音データがありません。";
-            }
-        });
-
+        if(playRecordedAudioButton) {
+            playRecordedAudioButton.addEventListener('click', () => {
+                if (recordedAudioPlayer && recordedAudioPlayer.src && recordedAudioBlob) {
+                    recordedAudioPlayer.classList.remove('hidden'); 
+                    recordedAudioPlayer.play();
+                } else {
+                    statusMessage.textContent = "再生する録音データがありません。"; 
+                }
+            });
+        }
 
         function comparePronunciation(original, recognized) {
             const normalize = (text) => text.toLowerCase().replace(/[.,?!']/g, "").trim();
@@ -574,11 +751,11 @@
             const normalizedRecognized = normalize(recognized);
 
             if (normalizedOriginal === normalizedRecognized) {
-                resultFeedback.textContent = "素晴らしい！正確です！";
-                resultFeedback.className = "feedback-display feedback-correct";
+                resultFeedback.textContent = "素晴らしい！正確です！"; 
+                resultFeedback.className = "feedback-display feedback-correct text-center";
             } else {
-                resultFeedback.textContent = "惜しい！もう一度試してみましょう。";
-                resultFeedback.className = "feedback-display feedback-incorrect";
+                resultFeedback.textContent = "惜しい！もう一度試してみましょう。"; 
+                resultFeedback.className = "feedback-display feedback-incorrect text-center";
             }
         }
 
@@ -589,24 +766,30 @@
             nextButton.addEventListener('click', () => {
                 if (!sentences || sentences.length <= 1) return; 
                 currentSentenceIndex = (currentSentenceIndex + 1) % sentences.length;
-                displaySentence(); // これにより再生ボタンなどがリセットされる
-                if (synthesis && synthesis.speaking) synthesis.cancel();
-                if (isRecording) stopAudioRecording(); // 次の問題に行く前に録音を停止
+                displaySentence(); 
+                if (synthesis && synthesis.speaking) synthesis.cancel(); 
+                if (isRecording) stopAudioRecording(); 
 
-                speakButton.disabled = false; // 念のため
-                recordButton.disabled = false; // 念のため
+                if(speakButton) speakButton.disabled = false; 
+                if(recordButton) recordButton.disabled = !( !micPermissionGranted && !speechRecognition );
             });
         }
 
+        // --- Initial Setup ---
         loadSentencesFromStorage();
-        if (synthesis && typeof synthesis.onvoiceschanged !== 'undefined' && synthesis.getVoices().length === 0) {
-             setTimeout(() => {
-                if(sentenceDisplay && sentenceDisplay.textContent === "" && (!synthesis || !synthesis.speaking)) { 
-                    displaySentence();
-                }
-            }, 1000); 
-        } else if (!synthesis || typeof synthesis.onvoiceschanged === 'undefined') {
-            displaySentence();
+        
+        if (currentMode === 'student') {
+            if (synthesis && typeof synthesis.onvoiceschanged !== 'undefined' && synthesis.getVoices().length === 0) {
+                 setTimeout(() => {
+                    if(sentenceDisplay && sentenceDisplay.textContent === "" && (!synthesis || !synthesis.speaking)) { 
+                        displaySentence();
+                    }
+                }, 500); 
+            } else { 
+                displaySentence();
+            }
+        } else { 
+            renderSentenceList();
         }
     </script>
 </body>
