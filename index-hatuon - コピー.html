@@ -88,9 +88,6 @@
         .modal-footer { text-align: right; }
         .close-btn { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; background: none; border: none; padding: 0; line-height: 1;}
         .close-btn:hover, .close-btn:focus { color: black; text-decoration: none; }
-        .audio-player-container { margin-top: 1rem; }
-        audio { width: 100%; }
-        audio.hidden { display: none; }
     </style>
 </head>
 <body>
@@ -110,20 +107,13 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
                 <span id="record-btn-text">Start Speaking</span>
             </button>
-            <button id="play-recorded-audio-btn" class="btn btn-info" disabled>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                Play My Recording
-            </button>
-        </div>
+            </div>
         <div id="status-message" class="status-message">Ready</div>
         <div class="mt-4">
             <h2 class="text-xl font-semibold mb-2">You Pronounced (Text):</h2>
             <div id="recognized-text" class="recognized-text-display"></div>
         </div>
         <div id="result-feedback" class="feedback-display"></div>
-        <div class="audio-player-container mt-4">
-            <audio id="recorded-audio-player" controls class="hidden"></audio>
-        </div>
         <div class="mt-6 text-center">
             <button id="next-btn" class="btn btn-secondary">Next Example</button>
         </div>
@@ -212,9 +202,10 @@
         let isRecording = false; // For SpeechRecognition
         let isSpeakingExample = false; // For SpeechSynthesis
 
-        let mediaRecorder;
-        let audioChunks = [];
-        let recordedAudioBlob = null;
+        // MediaRecorder related variables removed
+        // let mediaRecorder;
+        // let audioChunks = [];
+        // let recordedAudioBlob = null;
 
 
         // DOM Elements
@@ -222,8 +213,8 @@
         const recordButton = document.getElementById('record-btn');
         const recordButtonText = document.getElementById('record-btn-text');
         const speakExampleButton = document.getElementById('speak-example-btn');
-        const playRecordedAudioButton = document.getElementById('play-recorded-audio-btn');
-        const recordedAudioPlayer = document.getElementById('recorded-audio-player');
+        // const playRecordedAudioButton = document.getElementById('play-recorded-audio-btn'); // Removed
+        // const recordedAudioPlayer = document.getElementById('recorded-audio-player'); // Removed
         const recognizedTextDisplay = document.getElementById('recognized-text');
         const resultFeedback = document.getElementById('result-feedback');
         const nextButton = document.getElementById('next-btn');
@@ -287,7 +278,7 @@
 
         function toggleMode() {
             if (isRecording || isSpeakingExample) {
-                showAlert("Action in Progress", "Please stop recording or speaking before switching modes.");
+                showAlert("Action in Progress", "Please stop the current action before switching modes.");
                 return;
             }
             if (currentMode === 'student') {
@@ -373,7 +364,7 @@
                                voices.find(voice => voice.lang.startsWith('en-'));
                 if (!englishVoice) console.warn("English (US) voice not found for TTS.");
             };
-            if (speechSynthesis.getVoices().length > 0) { // For browsers that load voices immediately
+            if (speechSynthesis.getVoices().length > 0) { 
                 speechSynthesis.onvoiceschanged();
             }
         } else {
@@ -381,7 +372,7 @@
             if(speakExampleButton) speakExampleButton.disabled = true;
         }
         
-        // --- Speech Recognition & MediaRecorder Setup ---
+        // --- Speech Recognition Setup ---
         if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
             const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
             speechRecognition = new SpeechRecognitionAPI();
@@ -406,14 +397,14 @@
                 } else if (event.error === 'network') msg = "Network error during recognition.";
                 else msg = `Unexpected error: ${event.error}`;
                 statusMessage.textContent = msg;
-                if (isRecording) stopUserRecording(); 
+                if (isRecording) stopSpeechRecognition(); 
             };
             speechRecognition.onstart = () => {
-                // This is part of the user recording flow, UI updates are handled there.
+                // UI updates handled in recordButton.addEventListener
             };
             speechRecognition.onend = () => {
                 if (isRecording) { 
-                    stopUserRecording(); // Also stops MediaRecorder
+                    stopSpeechRecognition(); 
                 }
             };
         } else {
@@ -425,7 +416,7 @@
             if(recordButton) recordButton.disabled = disableAll;
             if(nextButton) nextButton.disabled = disableAll;
             if(speakExampleButton && disableAll) speakExampleButton.disabled = true;
-            if(playRecordedAudioButton && disableAll) playRecordedAudioButton.disabled = true;
+            // playRecordedAudioButton related logic removed
         }
 
         function displayCurrentSentence() {
@@ -440,9 +431,7 @@
             }
             recognizedTextDisplay.textContent = "";
             resultFeedback.textContent = "";
-            playRecordedAudioButton.disabled = true;
-            recordedAudioPlayer.classList.add('hidden');
-            recordedAudioPlayer.src = '';
+            // playRecordedAudioButton and recordedAudioPlayer logic removed
             if (statusMessage) statusMessage.textContent = "Ready";
         }
 
@@ -462,7 +451,7 @@
 
             isSpeakingExample = true;
             speakExampleButton.disabled = true;
-            recordButton.disabled = true; // Disable recording while speaking example
+            recordButton.disabled = true; 
             statusMessage.textContent = "Speaking example...";
 
             utterance.onend = () => {
@@ -482,59 +471,36 @@
             speechSynthesis.speak(utterance);
         });
         
-        // --- User Recording and Playback ---
+        // --- User Speech Recognition ---
         recordButton.addEventListener('click', async () => {
             if (!speechRecognition) { showAlert("Error", "Speech recognition is not available."); return; }
             if (isSpeakingExample) { showAlert("Busy", "Please wait for the example to finish."); return; }
 
             if (isRecording) {
-                // This will trigger speechRecognition.onend, which calls stopUserRecording()
                 if(speechRecognition) speechRecognition.stop(); 
-                if(mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
             } else {
                 if (!sentences || sentences.length === 0) {
                     showAlert("No Sentences", "There are no sentences to practice."); return;
                 }
                 if (!micPermissionGranted) {
                     try {
+                        // Request permission. We don't need to keep the stream for this simplified version.
                         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                         micPermissionGranted = true;
-                        setupMediaRecorder(stream); 
-                        // We got the stream for MediaRecorder, SpeechRecognition will use its own internal mic access.
-                        // It's important to stop tracks of THIS stream when MediaRecorder is done with it if not used elsewhere.
-                        // However, SpeechRecognition also needs the mic. This is usually handled fine by the browser.
+                        stream.getTracks().forEach(track => track.stop()); // Release mic immediately
                     } catch (err) {
                         handleMicPermissionError(err); return;
                     }
-                } else if (!mediaRecorder || (mediaRecorder.stream && mediaRecorder.stream.getTracks().every(track => track.readyState === 'ended'))) {
-                    // If permission granted but stream is old/ended, get a new one for MediaRecorder
-                    try {
-                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        setupMediaRecorder(stream);
-                    } catch (err) {
-                        showAlert("Microphone Error", "Failed to re-initialize microphone."); return;
-                    }
                 }
-                
-                if (!mediaRecorder && micPermissionGranted){ // If setupMediaRecorder failed after permission
-                     showAlert("Recorder Error", "Could not initialize audio recorder."); return;
-                }
-
 
                 if (micPermissionGranted) {
                     try {
-                        audioChunks = []; // Reset for new recording
-                        recordedAudioBlob = null;
-                        playRecordedAudioButton.disabled = true;
-                        recordedAudioPlayer.classList.add('hidden');
-                        recordedAudioPlayer.src = '';
                         recognizedTextDisplay.textContent = ""; 
                         resultFeedback.textContent = "";
-
-                        if(mediaRecorder) mediaRecorder.start();
+                        
                         speechRecognition.start();
                         
-                        isRecording = true; // Set state
+                        isRecording = true; 
                         recordButtonText.textContent = "Stop Speaking";
                         recordButton.classList.remove('btn-success');
                         recordButton.classList.add('btn-danger');
@@ -543,49 +509,13 @@
                         speakExampleButton.disabled = true;
 
                     } catch (e) {
-                        console.error("Error starting recording:", e);
-                        showAlert("Recording Error", "Could not start recording.");
-                        if (isRecording) stopUserRecording(); 
+                        console.error("Error starting speech recognition:", e);
+                        showAlert("Recognition Error", "Could not start speech recognition.");
+                        if (isRecording) stopSpeechRecognition(); 
                     }
                 }
             }
         });
-
-        function setupMediaRecorder(stream) {
-            if (!stream) { console.error("No stream provided to setupMediaRecorder"); return; }
-            try {
-                mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.ondataavailable = event => {
-                    if (event.data.size > 0) audioChunks.push(event.data);
-                };
-                mediaRecorder.onstop = () => {
-                    if (audioChunks.length > 0) {
-                        recordedAudioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
-                        const audioUrl = URL.createObjectURL(recordedAudioBlob);
-                        recordedAudioPlayer.src = audioUrl;
-                        playRecordedAudioButton.disabled = false;
-                    } else {
-                        playRecordedAudioButton.disabled = true;
-                        console.warn("No audio data recorded.");
-                    }
-                    // Stop tracks of the stream MediaRecorder was using, as it's done now.
-                    // This is important to release the microphone if SpeechRecognition is also done or uses a different mechanism.
-                    if (mediaRecorder && mediaRecorder.stream) {
-                         mediaRecorder.stream.getTracks().forEach(track => track.stop());
-                    }
-                };
-                mediaRecorder.onerror = (event) => {
-                    console.error("MediaRecorder error:", event.error);
-                    statusMessage.textContent = "Error during audio recording.";
-                    showAlert("Recorder Error", "An error occurred with the audio recorder.");
-                    if (isRecording) stopUserRecording();
-                };
-            } catch (e) {
-                 console.error("Error setting up MediaRecorder:", e);
-                 showAlert("Recorder Setup Error", "Could not setup audio recorder. Your browser might not support it.");
-                 mediaRecorder = null;
-            }
-        }
         
         function handleMicPermissionError(err) {
             console.error("Mic permission error:", err);
@@ -596,16 +526,13 @@
             showAlert("Microphone Error", msg);
         }
 
-
-        function stopUserRecording() {
-            if (mediaRecorder && mediaRecorder.state === "recording") {
-                mediaRecorder.stop();
-            }
-            // SpeechRecognition might have already stopped and triggered this,
-            // but if called directly (e.g. from error), ensure it's stopped.
-            if (speechRecognition && isRecording) { // Check isRecording to avoid stopping if not actually started
-                try { speechRecognition.abort(); } // Use abort for immediate stop if needed, or stop()
-                catch(e){ console.warn("Error trying to stop speech recognition:", e); }
+        function stopSpeechRecognition() {
+            // This function is called by speechRecognition.onend or directly
+            if (speechRecognition && isRecording) { 
+                try { 
+                    // speechRecognition.stop(); // onend should handle this, but abort can be more immediate if needed
+                } 
+                catch(e){ console.warn("Error trying to stop speech recognition (might be already stopped):", e); }
             }
 
             isRecording = false;
@@ -622,17 +549,7 @@
             speakExampleButton.disabled = false;
         }
         
-        playRecordedAudioButton.addEventListener('click', () => {
-            if (recordedAudioPlayer.src && recordedAudioBlob) {
-                recordedAudioPlayer.classList.remove('hidden');
-                recordedAudioPlayer.play().catch(e => {
-                    console.error("Error playing recorded audio:", e);
-                    showAlert("Playback Error", "Could not play recorded audio.");
-                });
-            } else {
-                showAlert("No Recording", "No recorded audio available to play.");
-            }
-        });
+        // Play recorded audio button event listener removed
         
         function comparePronunciation(original, recognized) {
             const normalize = (text) => text.toLowerCase().replace(/[.,?!']/g, "").trim();
@@ -665,12 +582,11 @@
             if (!sentences || sentences.length === 0) return; 
             if (isRecording) {
                 if(speechRecognition) speechRecognition.stop();
-                if(mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
-                stopUserRecording(); // Ensure UI is reset
+                // stopUserRecording(); // Now stopSpeechRecognition
             }
             if (isSpeakingExample) {
                 if(speechSynthesis && speechSynthesis.speaking) speechSynthesis.cancel();
-                isSpeakingExample = false; // Reset flag
+                isSpeakingExample = false; 
             }
             currentSentenceIndex = (currentSentenceIndex + 1) % sentences.length;
             displayCurrentSentence(); 
