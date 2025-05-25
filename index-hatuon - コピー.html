@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>音声認識文字起こしアプリ</title>
+    <title>English Pronunciation Practice App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* カスタムスタイル */
+        /* Custom styles */
         .btn-mic {
             transition: background-color 0.3s ease, box-shadow 0.3s ease;
         }
@@ -31,18 +31,18 @@
                 box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
             }
         }
-        #transcriptOutput::-webkit-scrollbar {
+        textarea::-webkit-scrollbar {
             width: 8px;
         }
-        #transcriptOutput::-webkit-scrollbar-track {
+        textarea::-webkit-scrollbar-track {
             background: #f1f1f1;
             border-radius: 10px;
         }
-        #transcriptOutput::-webkit-scrollbar-thumb {
+        textarea::-webkit-scrollbar-thumb {
             background: #888;
             border-radius: 10px;
         }
-        #transcriptOutput::-webkit-scrollbar-thumb:hover {
+        textarea::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
         .status-dot {
@@ -67,47 +67,66 @@
             70% { box-shadow: 0 0 0 7px rgba(59, 130, 246, 0); }
             100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
         }
+        .feedback-correct {
+            color: #10b981; /* Tailwind green-600 */
+            font-weight: bold;
+        }
+        .feedback-incorrect {
+            color: #ef4444; /* Tailwind red-500 */
+            font-weight: bold;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-900 to-slate-800 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 selection:bg-blue-500 selection:text-white">
 
     <div class="bg-slate-800 shadow-2xl rounded-xl p-6 md:p-10 w-full max-w-2xl">
         <header class="mb-8 text-center">
-            <h1 class="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
-                音声認識文字起こし
+            <h1 class="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
+                English Pronunciation Practice
             </h1>
-            <p class="text-slate-400 mt-2">マイクボタンを押して話し始めると、リアルタイムで文字起こしされます。</p>
+            <p class="text-slate-400 mt-2">Enter a sentence below, then press the mic button to practice your pronunciation.</p>
         </header>
+
+        <div class="mb-6">
+            <label for="referenceText" class="block text-sm font-medium text-slate-300 mb-1">Reference Sentence:</label>
+            <textarea id="referenceText" rows="3" class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter the English sentence you want to practice here..."></textarea>
+        </div>
 
         <div class="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
             <button id="micButton" class="btn-mic w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
                 <svg id="micIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                <span id="micButtonText">録音開始</span>
+                <span id="micButtonText">Start Speaking</span>
             </button>
             <div id="statusMessage" class="text-sm text-slate-400 flex items-center">
                 <span id="statusDot" class="status-dot idle"></span>
-                <span id="statusText">待機中</span>
+                <span id="statusText">Idle</span>
             </div>
         </div>
 
         <div class="mb-6">
-            <label for="transcriptOutput" class="block text-sm font-medium text-slate-300 mb-1">文字起こし結果:</label>
-            <textarea id="transcriptOutput" rows="10" class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none" readonly placeholder="ここに文字起こし結果が表示されます..."></textarea>
+            <label for="transcriptOutput" class="block text-sm font-medium text-slate-300 mb-1">What you said:</label>
+            <textarea id="transcriptOutput" rows="3" class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none" readonly placeholder="Your speech will appear here..."></textarea>
         </div>
+
+        <div class="mb-6">
+            <label for="feedbackArea" class="block text-sm font-medium text-slate-300 mb-1">Feedback:</label>
+            <div id="feedbackArea" class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 min-h-[40px]" placeholder="Feedback will appear here..."></div>
+        </div>
+
 
         <div class="flex flex-col sm:flex-row gap-4">
             <button id="copyButton" class="w-full sm:w-1/2 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 flex items-center justify-center space-x-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                <span>テキストをコピー</span>
+                <span>Copy What You Said</span>
             </button>
             <button id="clearButton" class="w-full sm:w-1/2 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 flex items-center justify-center space-x-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                <span>クリア</span>
+                <span>Clear All</span>
             </button>
         </div>
          <div id="messageBox" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
             <div class="bg-slate-700 p-6 rounded-lg shadow-xl max-w-sm w-full">
-                <h3 id="messageBoxTitle" class="text-lg font-semibold text-slate-100 mb-3">メッセージ</h3>
+                <h3 id="messageBoxTitle" class="text-lg font-semibold text-slate-100 mb-3">Message</h3>
                 <p id="messageBoxText" class="text-slate-300 mb-4"></p>
                 <button id="messageBoxOkButton" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">OK</button>
             </div>
@@ -115,12 +134,12 @@
     </div>
 
     <footer class="mt-10 text-center text-sm text-slate-500">
-        <p>&copy; 2024 音声認識アプリ. All rights reserved.</p>
-        <p class="mt-1">ブラウザがWeb Speech APIに対応している必要があります。</p>
+        <p>&copy; 2024 English Pronunciation Practice App. All rights reserved.</p>
+        <p class="mt-1">This app requires a browser that supports the Web Speech API.</p>
     </footer>
 
     <script>
-        // DOM要素の取得
+        // DOM elements
         const micButton = document.getElementById('micButton');
         const micButtonText = document.getElementById('micButtonText');
         const micIcon = document.getElementById('micIcon');
@@ -130,159 +149,232 @@
         const statusDot = document.getElementById('statusDot');
         const copyButton = document.getElementById('copyButton');
         const clearButton = document.getElementById('clearButton');
+        const referenceText = document.getElementById('referenceText'); // Reference text input
+        const feedbackArea = document.getElementById('feedbackArea');   // Feedback display area
 
-        // メッセージボックス関連
+        // Message box elements
         const messageBox = document.getElementById('messageBox');
         const messageBoxTitle = document.getElementById('messageBoxTitle');
         const messageBoxText = document.getElementById('messageBoxText');
         const messageBoxOkButton = document.getElementById('messageBoxOkButton');
 
-        // Web Speech API の準備
+        // Web Speech API setup
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
 
         let isRecording = false;
-        let finalTranscript = ''; // 確定した文字起こし結果を保持
+        let finalTranscript = '';
 
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
-            recognition.continuous = true; // 連続的な認識を行う
-            recognition.interimResults = true; // 中間結果を取得する
-            recognition.lang = 'ja-JP'; // 言語を日本語に設定
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US'; // Set language to English (US)
 
-            // 音声認識の開始時
+            // On recognition start
             recognition.onstart = () => {
                 isRecording = true;
-                micButtonText.textContent = '録音停止';
+                micButtonText.textContent = 'Stop Speaking';
                 micButton.classList.add('recording', 'bg-red-600', 'hover:bg-red-700');
                 micButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
                 micIcon.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`; // Stop icon
-                statusText.textContent = '認識中...';
+                statusText.textContent = 'Listening...';
                 statusDot.className = 'status-dot listening';
-                console.log('音声認識を開始しました。');
+                referenceText.disabled = true; // Disable reference text editing during recording
+                feedbackArea.textContent = ''; // Clear previous feedback
+                finalTranscript = ''; // Clear previous final transcript
+                transcriptOutput.value = ''; // Clear previous transcript output
+                console.log('Speech recognition started. Language: ' + recognition.lang);
             };
 
-            // 音声認識の結果が得られた時
+            // On receiving result
             recognition.onresult = (event) => {
-                let interimTranscript = ''; // 中間結果
+                let interimTranscript = '';
+                finalTranscript = ''; // Reset finalTranscript for each new result set from continuous recognition
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    const transcriptPart = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript;
+                        finalTranscript += transcriptPart;
                     } else {
-                        interimTranscript += event.results[i][0].transcript;
+                        interimTranscript += transcriptPart;
                     }
                 }
-                transcriptOutput.value = finalTranscript + interimTranscript; // 確定結果と中間結果を表示
-                transcriptOutput.scrollTop = transcriptOutput.scrollHeight; // 自動スクロール
-                console.log('認識結果:', event.results);
-            };
+                transcriptOutput.value = (finalTranscript + interimTranscript).trim();
+                transcriptOutput.scrollTop = transcriptOutput.scrollHeight;
 
-            // 音声認識のエラー発生時
-            recognition.onerror = (event) => {
-                console.error('音声認識エラー:', event.error);
-                let errorMessage = '音声認識中にエラーが発生しました。';
-                if (event.error === 'no-speech') {
-                    errorMessage = '音声が検出されませんでした。もう一度お試しください。';
-                } else if (event.error === 'audio-capture') {
-                    errorMessage = 'マイクの音声取得に失敗しました。マイクの接続を確認してください。';
-                } else if (event.error === 'not-allowed') {
-                    // エラーメッセージをより具体的に変更
-                    errorMessage = 'マイクへのアクセスが許可されていません。ブラウザのアドレスバーの左側にあるアイコンなどを確認し、マイクの使用を許可してください。';
-                } else if (event.error === 'network') {
-                    errorMessage = 'ネットワークエラーが発生しました。接続を確認してください。';
+                if (finalTranscript) { // Process only when there's a final transcript
+                    checkPronunciation();
                 }
-                statusText.textContent = `エラー: ${event.error}`;
-                statusDot.className = 'status-dot error';
-                showCustomAlert('エラー', errorMessage);
-                stopRecognition(); // エラー時は認識を停止
+                console.log('Recognition result:', event.results);
             };
 
-            // 音声認識の終了時
+            // On error
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                let errorMessage = 'An error occurred during speech recognition.';
+                if (event.error === 'no-speech') {
+                    errorMessage = 'No speech was detected. Please try again.';
+                } else if (event.error === 'audio-capture') {
+                    errorMessage = 'Audio capture failed. Please check your microphone connection.';
+                } else if (event.error === 'not-allowed') {
+                    errorMessage = 'Microphone access was not allowed. Please check your browser settings (e.g., the icon on the left of the address bar) and allow microphone access.';
+                } else if (event.error === 'network') {
+                    errorMessage = 'A network error occurred. Please check your connection.';
+                }
+                statusText.textContent = `Error: ${event.error}`;
+                statusDot.className = 'status-dot error';
+                showCustomAlert('Error', errorMessage);
+                stopAndResetRecognition();
+            };
+
+            // On recognition end
             recognition.onend = () => {
-                stopRecognition(); // 状態をリセット
-                console.log('音声認識が終了しました。');
+                stopAndResetRecognition();
+                console.log('Speech recognition ended.');
             };
 
         } else {
-            // Web Speech API 非対応の場合
-            showCustomAlert('非対応ブラウザ', 'お使いのブラウザは音声認識に対応していません。');
+            // Web Speech API not supported
+            showCustomAlert('Browser Not Supported', 'Your browser does not support speech recognition.');
             micButton.disabled = true;
-            micButtonText.textContent = '非対応';
-            statusText.textContent = '非対応ブラウザです';
+            micButtonText.textContent = 'Not Supported';
+            statusText.textContent = 'Browser not supported';
             statusDot.className = 'status-dot error';
+            referenceText.disabled = true;
         }
 
-        // マイクボタンのクリックイベント
+        // Mic button click event
         micButton.addEventListener('click', () => {
             if (!SpeechRecognition) return;
 
             if (isRecording) {
-                recognition.stop();
+                recognition.stop(); // This will trigger onend, which calls stopAndResetRecognition
             } else {
-                // 既存の文字起こし結果をクリアせずに追記する場合
-                // finalTranscript = transcriptOutput.value; // 現在のテキストを保持
-                // if(finalTranscript.length > 0 && !finalTranscript.endsWith(' ')) {
-                //     finalTranscript += ' '; // 区切りとしてスペースを追加
-                // }
+                if (!referenceText.value.trim()) {
+                    showCustomAlert('Input Required', 'Please enter a reference sentence first.');
+                    return;
+                }
                 try {
+                    finalTranscript = ''; // Clear previous final transcript
+                    transcriptOutput.value = ''; // Clear previous transcript output
+                    feedbackArea.innerHTML = ''; // Clear previous feedback
                     recognition.start();
                 } catch (e) {
-                    // iOSなどで連続呼び出し時にエラーになることがあるため
-                    console.error("認識開始エラー:", e);
-                    showCustomAlert('エラー', '認識を開始できませんでした。少し待ってから再度お試しください。');
-                    stopRecognition();
+                    console.error("Recognition start error:", e);
+                    showCustomAlert('Error', 'Could not start recognition. Please wait a moment and try again.');
+                    stopAndResetRecognition();
                 }
             }
         });
+        
+        // Function to normalize text for comparison
+        function normalizeText(text) {
+            return text.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g,"").replace(/\s+/g, ' ').trim();
+        }
 
-        // 認識を停止し、UIをリセットする関数
-        function stopRecognition() {
-            if (isRecording) { // 実際に録音中の場合のみ recognition.stop() を呼ぶ
-                 if (recognition && SpeechRecognition) { // recognitionが存在し、APIがサポートされている場合
+        // Function to check pronunciation
+        function checkPronunciation() {
+            const refText = normalizeText(referenceText.value);
+            const spokenText = normalizeText(finalTranscript); // Use the accumulated finalTranscript
+
+            if (!refText) {
+                feedbackArea.textContent = "Please enter a reference sentence.";
+                feedbackArea.className = 'w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 min-h-[40px]';
+                return;
+            }
+
+            if (!spokenText) {
+                 // This case might be handled by no-speech error, but as a fallback:
+                feedbackArea.textContent = "Could not hear what you said clearly.";
+                feedbackArea.className = 'w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 min-h-[40px] feedback-incorrect';
+                return;
+            }
+
+            console.log("Reference (normalized):", refText);
+            console.log("Spoken (normalized):", spokenText);
+
+            if (refText === spokenText) {
+                feedbackArea.textContent = "Excellent! That's correct.";
+                feedbackArea.className = 'w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 min-h-[40px] feedback-correct';
+            } else {
+                // Basic diff highlighting (could be improved)
+                let feedbackHTML = "Not quite. Let's check the differences:<br>";
+                feedbackHTML += `<strong>Expected:</strong> ${highlightDifferences(refText, spokenText, true)}<br>`;
+                feedbackHTML += `<strong>You said:</strong> ${highlightDifferences(spokenText, refText, false)}`;
+                feedbackArea.innerHTML = feedbackHTML;
+                feedbackArea.className = 'w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 min-h-[40px] feedback-incorrect';
+            }
+        }
+        
+        // Simple diff highlighting function
+        function highlightDifferences(text1, text2, isReference) {
+            // This is a very basic word-by-word comparison.
+            // For more sophisticated diff, a library might be needed.
+            const words1 = text1.split(' ');
+            const words2 = text2.split(' ');
+            let result = '';
+
+            for (let i = 0; i < Math.max(words1.length, words2.length); i++) {
+                if (i < words1.length) {
+                    if (i < words2.length && words1[i] === words2[i]) {
+                        result += words1[i] + ' ';
+                    } else {
+                         // If it's the reference text and word is missing in spoken, or if it's spoken text and it's an extra/wrong word
+                        result += `<span class="${isReference ? 'text-green-400' : 'text-red-400 line-through'}">${words1[i]}</span> `;
+                    }
+                } else if (i < words2.length && !isReference) { // Extra words in spoken text if this is the spoken text being compared
+                     // This part is tricky with simple diff. Let's keep it simpler for now.
+                }
+            }
+             return result.trim();
+        }
+
+
+        // Function to stop recognition and reset UI
+        function stopAndResetRecognition() {
+            if (isRecording) {
+                 if (recognition && SpeechRecognition) {
                     try {
-                        recognition.stop(); // onendが呼ばれるので、ここでの状態変更は最小限に
+                        // recognition.stop(); // onend will be called, so this might be redundant if called from onend itself.
+                                         // However, if called from onerror, it's necessary.
                     } catch (e) {
-                        console.warn("recognition.stop() でエラーが発生しましたが、無視します:", e);
+                        console.warn("recognition.stop() error (ignored):", e);
                     }
                 }
             }
             isRecording = false;
-            micButtonText.textContent = '録音開始';
+            micButtonText.textContent = 'Start Speaking';
             micButton.classList.remove('recording', 'bg-red-600', 'hover:bg-red-700');
             micButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
             micIcon.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>`; // Mic icon
-            statusText.textContent = '待機中';
+            statusText.textContent = 'Idle';
             statusDot.className = 'status-dot idle';
+            referenceText.disabled = false; // Re-enable reference text editing
         }
 
-        // コピーボタンのイベント
+        // Copy button event
         copyButton.addEventListener('click', () => {
             if (transcriptOutput.value) {
-                // navigator.clipboard API を優先的に使用
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(transcriptOutput.value)
                         .then(() => {
-                            showCustomAlert('コピー完了', '文字起こし結果をクリップボードにコピーしました。');
+                            showCustomAlert('Copied', 'What you said has been copied to the clipboard.');
                         })
                         .catch(err => {
-                            console.error('クリップボードへのコピーに失敗(API):', err);
-                            // フォールバックとして execCommand を試す
+                            console.error('Failed to copy to clipboard (API):', err);
                             fallbackCopyTextToClipboard(transcriptOutput.value);
                         });
                 } else {
-                    // navigator.clipboard が使えない場合のフォールバック
                     fallbackCopyTextToClipboard(transcriptOutput.value);
                 }
             } else {
-                showCustomAlert('コピー失敗', 'コピーするテキストがありません。');
+                showCustomAlert('Copy Failed', 'There is no text to copy.');
             }
         });
 
-        // execCommand を使ったフォールバックコピー関数
         function fallbackCopyTextToClipboard(text) {
             const textArea = document.createElement("textarea");
             textArea.value = text;
-            // スクロールしないように、また画面外に配置
             textArea.style.position = "fixed";
             textArea.style.top = "0";
             textArea.style.left = "0";
@@ -299,34 +391,34 @@
             try {
                 const successful = document.execCommand('copy');
                 if (successful) {
-                    showCustomAlert('コピー完了', '文字起こし結果をクリップボードにコピーしました。');
+                    showCustomAlert('Copied', 'What you said has been copied to the clipboard.');
                 } else {
-                    showCustomAlert('コピー失敗', 'クリップボードへのコピーに失敗しました。');
-                    console.error('クリップボードへのコピーに失敗(execCommand)');
+                    showCustomAlert('Copy Failed', 'Failed to copy text to clipboard.');
                 }
             } catch (err) {
-                showCustomAlert('コピー失敗', 'クリップボードへのコピーに失敗しました。');
-                console.error('クリップボードへのコピー中にエラーが発生(execCommand):', err);
+                showCustomAlert('Copy Failed', 'Error copying text to clipboard.');
             }
             document.body.removeChild(textArea);
         }
 
-
-        // クリアボタンのイベント
+        // Clear button event
         clearButton.addEventListener('click', () => {
+            referenceText.value = '';
             transcriptOutput.value = '';
-            finalTranscript = ''; // 確定した文字起こし結果もクリア
-            showCustomAlert('クリア完了', '文字起こし結果をクリアしました。');
+            finalTranscript = '';
+            feedbackArea.textContent = '';
+            feedbackArea.className = 'w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 min-h-[40px]';
+            showCustomAlert('Cleared', 'All text fields have been cleared.');
         });
 
-        // カスタムアラート表示関数
+        // Custom alert display function
         function showCustomAlert(title, message) {
             messageBoxTitle.textContent = title;
             messageBoxText.textContent = message;
             messageBox.classList.remove('hidden');
         }
 
-        // カスタムアラートのOKボタン
+        // Custom alert OK button
         messageBoxOkButton.addEventListener('click', () => {
             messageBox.classList.add('hidden');
         });
