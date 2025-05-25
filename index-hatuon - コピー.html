@@ -36,6 +36,12 @@
             border: none;
             outline: none;
             margin: 0.5rem;
+            display: inline-flex; /* For aligning icon and text */
+            align-items: center;
+            justify-content: center;
+        }
+        .btn svg {
+            margin-right: 0.5rem;
         }
         .btn:disabled {
             opacity: 0.7;
@@ -56,6 +62,8 @@
         .btn-danger:hover:not(:disabled) { background-color: #dc2626; } /* red-600 */
         .btn-warning { background-color: #f59e0b; color: white; } /* amber-500 */
         .btn-warning:hover:not(:disabled) { background-color: #d97706; } /* amber-600 */
+        .btn-info { background-color: #38bdf8; color: white; } /* sky-400 */
+        .btn-info:hover:not(:disabled) { background-color: #0ea5e9; } /* sky-500 */
         
         .sentence-display { font-size: 1.5rem; font-weight: 500; margin-bottom: 1.5rem; padding: 1rem; background-color: #e5e7eb; border-radius: 0.5rem; min-height: 100px; display: flex; align-items: center; justify-content: center; color: #1f2937; }
         .recognized-text-display { font-size: 1.125rem; margin-top: 1rem; padding: 0.75rem; background-color: #f9fafb; border: 1px solid #d1d5db; border-radius: 0.5rem; min-height: 60px; color: #4b5563; }
@@ -71,7 +79,6 @@
         .sentence-actions button { margin-left: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.875rem; }
         .add-sentence-form textarea { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.5rem; min-height: 80px; margin-bottom: 0.5rem; color: #374151;}
         
-        /* Modal Styles */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
         .modal-content { background-color: #fefefe; margin: auto; padding: 20px; border: 1px solid #888; width: 90%; max-width: 500px; border-radius: 0.5rem; text-align: left; color: #374151;}
         .modal-content textarea { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.5rem; min-height: 100px; margin-bottom: 1rem; color: #374151;}
@@ -81,6 +88,9 @@
         .modal-footer { text-align: right; }
         .close-btn { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; background: none; border: none; padding: 0; line-height: 1;}
         .close-btn:hover, .close-btn:focus { color: black; text-decoration: none; }
+        .audio-player-container { margin-top: 1rem; }
+        audio { width: 100%; }
+        audio.hidden { display: none; }
     </style>
 </head>
 <body>
@@ -92,9 +102,17 @@
         <h1 class="text-3xl font-bold mb-6 text-center text-blue-600">English Pronunciation Practice</h1>
         <div id="sentence-display" class="sentence-display">Loading sentence...</div>
         <div class="flex flex-wrap justify-center items-center mb-4">
+            <button id="speak-example-btn" class="btn btn-primary">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                Speak Example
+            </button>
             <button id="record-btn" class="btn btn-success">
-                <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
                 <span id="record-btn-text">Start Speaking</span>
+            </button>
+            <button id="play-recorded-audio-btn" class="btn btn-info" disabled>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Play My Recording
             </button>
         </div>
         <div id="status-message" class="status-message">Ready</div>
@@ -103,6 +121,9 @@
             <div id="recognized-text" class="recognized-text-display"></div>
         </div>
         <div id="result-feedback" class="feedback-display"></div>
+        <div class="audio-player-container mt-4">
+            <audio id="recorded-audio-player" controls class="hidden"></audio>
+        </div>
         <div class="mt-6 text-center">
             <button id="next-btn" class="btn btn-secondary">Next Example</button>
         </div>
@@ -117,8 +138,7 @@
         </div>
         <div>
             <h2 class="text-xl font-semibold mb-2 text-left">Registered Sentences List</h2>
-            <div id="sentence-list" class="space-y-2">
-                </div>
+            <div id="sentence-list" class="space-y-2"></div>
             <p id="no-sentences-message" class="text-gray-500 mt-4 hidden">No sentences registered yet.</p>
         </div>
     </div>
@@ -134,7 +154,7 @@
             </div>
             <div class="modal-footer">
                 <button id="save-edit-btn" class="btn btn-primary">Save Changes</button>
-                 <button id="cancel-edit-btn" class="btn btn-secondary">Cancel</button>
+                <button id="cancel-edit-btn" class="btn btn-secondary">Cancel</button>
             </div>
         </div>
     </div>
@@ -143,7 +163,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="custom-alert-title" class="modal-title">Alert</h2>
-                 <button id="close-alert-modal-btn" class="close-btn">&times;</button>
+                <button id="close-alert-modal-btn" class="close-btn">&times;</button>
             </div>
             <div class="modal-body">
                 <p id="custom-alert-message"></p>
@@ -156,7 +176,7 @@
 
     <div id="custom-confirm-modal" class="modal">
         <div class="modal-content">
-             <div class="modal-header">
+            <div class="modal-header">
                 <h2 id="custom-confirm-title" class="modal-title">Confirm</h2>
                 <button id="close-confirm-modal-btn" class="close-btn">&times;</button>
             </div>
@@ -184,15 +204,26 @@
 
         let currentSentenceIndex = 0;
         let speechRecognition;
+        let speechSynthesis = window.speechSynthesis;
+        let englishVoice = null;
         let micPermissionGranted = false;
-        let currentMode = 'student'; // 'student' or 'teacher'
+        let currentMode = 'student';
         let editingSentenceIndex = -1;
-        let isRecording = false;
+        let isRecording = false; // For SpeechRecognition
+        let isSpeakingExample = false; // For SpeechSynthesis
+
+        let mediaRecorder;
+        let audioChunks = [];
+        let recordedAudioBlob = null;
+
 
         // DOM Elements
         const sentenceDisplay = document.getElementById('sentence-display');
         const recordButton = document.getElementById('record-btn');
-        const recordButtonText = document.getElementById('record-btn-text'); // For record button text
+        const recordButtonText = document.getElementById('record-btn-text');
+        const speakExampleButton = document.getElementById('speak-example-btn');
+        const playRecordedAudioButton = document.getElementById('play-recorded-audio-btn');
+        const recordedAudioPlayer = document.getElementById('recorded-audio-player');
         const recognizedTextDisplay = document.getElementById('recognized-text');
         const resultFeedback = document.getElementById('result-feedback');
         const nextButton = document.getElementById('next-btn');
@@ -212,7 +243,6 @@
         const saveEditButton = document.getElementById('save-edit-btn');
         const cancelEditButton = document.getElementById('cancel-edit-btn');
 
-        // Custom Modal Elements
         const customAlertModal = document.getElementById('custom-alert-modal');
         const customAlertTitle = document.getElementById('custom-alert-title');
         const customAlertMessage = document.getElementById('custom-alert-message');
@@ -226,7 +256,6 @@
         const customConfirmNoButton = document.getElementById('custom-confirm-no-btn');
         const closeConfirmModalButton = document.getElementById('close-confirm-modal-btn');
 
-        // --- Utility Functions for Modals ---
         function showAlert(title, message) {
             customAlertTitle.textContent = title;
             customAlertMessage.textContent = message;
@@ -239,47 +268,26 @@
             customConfirmTitle.textContent = title;
             customConfirmMessage.textContent = message;
             customConfirmModal.style.display = 'flex';
-            
-            // Clone and replace buttons to remove old event listeners
             const newYesButton = customConfirmYesButton.cloneNode(true);
             customConfirmYesButton.parentNode.replaceChild(newYesButton, customConfirmYesButton);
-            
             const newNoButton = customConfirmNoButton.cloneNode(true);
             customConfirmNoButton.parentNode.replaceChild(newNoButton, customConfirmNoButton);
-
-            newYesButton.onclick = () => {
-                customConfirmModal.style.display = 'none';
-                callback(true);
-            };
-            newNoButton.onclick = () => {
-                customConfirmModal.style.display = 'none';
-                callback(false);
-            };
+            newYesButton.onclick = () => { customConfirmModal.style.display = 'none'; callback(true); };
+            newNoButton.onclick = () => { customConfirmModal.style.display = 'none'; callback(false); };
         }
         closeConfirmModalButton.addEventListener('click', () => customConfirmModal.style.display = 'none');
         cancelEditButton.addEventListener('click', () => closeEditModal());
 
-
-        // --- Local Storage Functions ---
         function loadSentencesFromStorage() {
             const storedSentences = localStorage.getItem('pronunciationAppSentences');
-            if (storedSentences) {
-                sentences = JSON.parse(storedSentences);
-            }
-            if (!sentences || sentences.length === 0) { 
-                sentences = [...defaultSentences];
-                saveSentencesToStorage();
-            }
+            if (storedSentences) { sentences = JSON.parse(storedSentences); }
+            if (!sentences || sentences.length === 0) { sentences = [...defaultSentences]; saveSentencesToStorage(); }
         }
+        function saveSentencesToStorage() { localStorage.setItem('pronunciationAppSentences', JSON.stringify(sentences)); }
 
-        function saveSentencesToStorage() {
-            localStorage.setItem('pronunciationAppSentences', JSON.stringify(sentences));
-        }
-
-        // --- Mode Toggling ---
         function toggleMode() {
-            if (isRecording) { // Prevent mode switch during recording
-                showAlert("Recording in Progress", "Please stop recording before switching modes.");
+            if (isRecording || isSpeakingExample) {
+                showAlert("Action in Progress", "Please stop recording or speaking before switching modes.");
                 return;
             }
             if (currentMode === 'student') {
@@ -300,49 +308,30 @@
         }
         toggleModeButton.addEventListener('click', toggleMode);
 
-        // --- Teacher Mode Functions ---
         function renderSentenceList() {
             sentenceList.innerHTML = '';
-            if (sentences.length === 0) {
-                noSentencesMessage.classList.remove('hidden');
-                return;
-            }
+            if (sentences.length === 0) { noSentencesMessage.classList.remove('hidden'); return; }
             noSentencesMessage.classList.add('hidden');
             sentences.forEach((sentence, index) => {
-                const listItem = document.createElement('div');
-                listItem.className = 'sentence-list-item';
-                const textSpan = document.createElement('span');
-                textSpan.className = 'sentence-text';
+                const listItem = document.createElement('div'); listItem.className = 'sentence-list-item';
+                const textSpan = document.createElement('span'); textSpan.className = 'sentence-text';
                 textSpan.textContent = sentence.length > 50 ? sentence.substring(0, 50) + '...' : sentence;
-                const actionsDiv = document.createElement('div');
-                actionsDiv.className = 'sentence-actions';
-                const editBtn = document.createElement('button');
-                editBtn.className = 'btn btn-warning';
-                editBtn.textContent = 'Edit';
+                const actionsDiv = document.createElement('div'); actionsDiv.className = 'sentence-actions';
+                const editBtn = document.createElement('button'); editBtn.className = 'btn btn-warning'; editBtn.textContent = 'Edit';
                 editBtn.onclick = () => openEditModal(index);
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'btn btn-danger';
-                deleteBtn.textContent = 'Delete';
+                const deleteBtn = document.createElement('button'); deleteBtn.className = 'btn btn-danger'; deleteBtn.textContent = 'Delete';
                 deleteBtn.onclick = () => deleteSentence(index);
-                actionsDiv.appendChild(editBtn);
-                actionsDiv.appendChild(deleteBtn);
-                listItem.appendChild(textSpan);
-                listItem.appendChild(actionsDiv);
+                actionsDiv.appendChild(editBtn); actionsDiv.appendChild(deleteBtn);
+                listItem.appendChild(textSpan); listItem.appendChild(actionsDiv);
                 sentenceList.appendChild(listItem);
             });
         }
-
         function addSentence() {
             const text = newSentenceText.value.trim();
             if (text) {
-                sentences.push(text);
-                saveSentencesToStorage();
-                renderSentenceList();
-                newSentenceText.value = '';
-                showAlert('Success', 'Sentence added successfully.');
-            } else {
-                showAlert('Input Required', 'Please enter a sentence.');
-            }
+                sentences.push(text); saveSentencesToStorage(); renderSentenceList();
+                newSentenceText.value = ''; showAlert('Success', 'Sentence added successfully.');
+            } else { showAlert('Input Required', 'Please enter a sentence.'); }
         }
         addSentenceButton.addEventListener('click', addSentence);
 
@@ -350,48 +339,49 @@
             const sentenceToDelete = sentences[index].substring(0,30) + (sentences[index].length > 30 ? "..." : "");
             showConfirm('Confirm Deletion', `Are you sure you want to delete "${sentenceToDelete}"?`, (confirmed) => {
                 if (confirmed) {
-                    sentences.splice(index, 1);
-                    saveSentencesToStorage();
-                    renderSentenceList();
+                    sentences.splice(index, 1); saveSentencesToStorage(); renderSentenceList();
                     showAlert('Success', 'Sentence deleted successfully.');
                 }
             });
         }
-
         function openEditModal(index) {
-            editingSentenceIndex = index;
-            editSentenceInput.value = sentences[index];
+            editingSentenceIndex = index; editSentenceInput.value = sentences[index];
             editModal.style.display = 'flex';
         }
-
-        function closeEditModal() {
-            editModal.style.display = 'none';
-            editingSentenceIndex = -1;
-        }
+        function closeEditModal() { editModal.style.display = 'none'; editingSentenceIndex = -1; }
         closeEditModalButton.addEventListener('click', closeEditModal);
-        
         window.addEventListener('click', (event) => {
             if (event.target == editModal) closeEditModal();
             if (event.target == customAlertModal) customAlertModal.style.display = 'none';
             if (event.target == customConfirmModal) customConfirmModal.style.display = 'none';
         });
-
-
         function saveEditedSentence() {
             const newText = editSentenceInput.value.trim();
             if (newText && editingSentenceIndex > -1) {
-                sentences[editingSentenceIndex] = newText;
-                saveSentencesToStorage();
-                renderSentenceList();
-                closeEditModal();
-                showAlert('Success', 'Sentence updated successfully.');
-            } else if (!newText) {
-                showAlert('Input Required', 'Please enter a sentence.');
-            }
+                sentences[editingSentenceIndex] = newText; saveSentencesToStorage(); renderSentenceList();
+                closeEditModal(); showAlert('Success', 'Sentence updated successfully.');
+            } else if (!newText) { showAlert('Input Required', 'Please enter a sentence.'); }
         }
         saveEditButton.addEventListener('click', saveEditedSentence);
 
-        // --- Student Mode (Pronunciation App) Functions ---
+        // --- Speech Synthesis Setup ---
+        if ('speechSynthesis' in window) {
+            speechSynthesis.onvoiceschanged = () => {
+                const voices = speechSynthesis.getVoices();
+                englishVoice = voices.find(voice => voice.lang.startsWith('en-') && voice.name.includes('Google US English')) ||
+                               voices.find(voice => voice.lang.startsWith('en-') && voice.default) ||
+                               voices.find(voice => voice.lang.startsWith('en-'));
+                if (!englishVoice) console.warn("English (US) voice not found for TTS.");
+            };
+            if (speechSynthesis.getVoices().length > 0) { // For browsers that load voices immediately
+                speechSynthesis.onvoiceschanged();
+            }
+        } else {
+            showAlert("TTS Not Supported", "Your browser does not support text-to-speech.");
+            if(speakExampleButton) speakExampleButton.disabled = true;
+        }
+        
+        // --- Speech Recognition & MediaRecorder Setup ---
         if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
             const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
             speechRecognition = new SpeechRecognitionAPI();
@@ -404,9 +394,7 @@
                 const recognized = event.results[0][0].transcript.trim();
                 recognizedTextDisplay.textContent = recognized;
                 comparePronunciation(sentences[currentSentenceIndex], recognized);
-                // UI reset is handled by onend
             };
-
             speechRecognition.onerror = (event) => {
                 console.error("Speech recognition error:", event.error, event.message);
                 let msg = "Speech recognition error.";
@@ -417,25 +405,15 @@
                     micPermissionGranted = false; 
                 } else if (event.error === 'network') msg = "Network error during recognition.";
                 else msg = `Unexpected error: ${event.error}`;
-                
                 statusMessage.textContent = msg;
-                if (isRecording) stopRecording(); 
+                if (isRecording) stopUserRecording(); 
             };
-
             speechRecognition.onstart = () => {
-                isRecording = true;
-                recordButtonText.textContent = "Stop Speaking";
-                recordButton.classList.remove('btn-success');
-                recordButton.classList.add('btn-danger');
-                statusMessage.textContent = "Listening...";
-                recognizedTextDisplay.textContent = ""; 
-                resultFeedback.textContent = "";
-                nextButton.disabled = true;
+                // This is part of the user recording flow, UI updates are handled there.
             };
-            
             speechRecognition.onend = () => {
-                if (isRecording) { // Ensure it was actually recording
-                    stopRecording();
+                if (isRecording) { 
+                    stopUserRecording(); // Also stops MediaRecorder
                 }
             };
         } else {
@@ -443,79 +421,218 @@
             disableStudentModeControls();
         }
         
-        function disableStudentModeControls() {
-            if(recordButton) recordButton.disabled = true;
-            if(nextButton) nextButton.disabled = true;
+        function disableStudentModeControls(disableAll = true) {
+            if(recordButton) recordButton.disabled = disableAll;
+            if(nextButton) nextButton.disabled = disableAll;
+            if(speakExampleButton && disableAll) speakExampleButton.disabled = true;
+            if(playRecordedAudioButton && disableAll) playRecordedAudioButton.disabled = true;
         }
 
         function displayCurrentSentence() {
             if (sentences && sentences.length > 0 && currentSentenceIndex < sentences.length) {
                 sentenceDisplay.textContent = sentences[currentSentenceIndex];
-                nextButton.disabled = sentences.length <= 1 && currentSentenceIndex === 0; // Disable if only one sentence
+                nextButton.disabled = sentences.length <= 1;
                 recordButton.disabled = false;
+                if(speakExampleButton) speakExampleButton.disabled = false;
             } else {
                 sentenceDisplay.textContent = "No sentences available. Add some in Teacher Mode.";
                 disableStudentModeControls();
             }
             recognizedTextDisplay.textContent = "";
             resultFeedback.textContent = "";
+            playRecordedAudioButton.disabled = true;
+            recordedAudioPlayer.classList.add('hidden');
+            recordedAudioPlayer.src = '';
             if (statusMessage) statusMessage.textContent = "Ready";
         }
-        
-        recordButton.addEventListener('click', async () => {
-            if (!speechRecognition) {
-                showAlert("Error", "Speech recognition is not available.");
+
+        // --- Speak Example Function ---
+        speakExampleButton.addEventListener('click', () => {
+            if (!speechSynthesis || !sentences || sentences.length === 0 || isRecording || isSpeakingExample) {
+                if(isRecording) showAlert("Busy", "Please stop recording first.");
+                if(isSpeakingExample) showAlert("Busy", "Already speaking.");
                 return;
             }
+            if (speechSynthesis.speaking) speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(sentences[currentSentenceIndex]);
+            if (englishVoice) utterance.voice = englishVoice;
+            utterance.lang = 'en-US'; 
+            utterance.rate = 0.9;
+
+            isSpeakingExample = true;
+            speakExampleButton.disabled = true;
+            recordButton.disabled = true; // Disable recording while speaking example
+            statusMessage.textContent = "Speaking example...";
+
+            utterance.onend = () => {
+                isSpeakingExample = false;
+                speakExampleButton.disabled = false;
+                recordButton.disabled = false;
+                statusMessage.textContent = "Example finished. Ready to record.";
+            };
+            utterance.onerror = (e) => {
+                isSpeakingExample = false;
+                speakExampleButton.disabled = false;
+                recordButton.disabled = false;
+                statusMessage.textContent = "Error speaking example.";
+                console.error("SpeechSynthesis Error:", e);
+                showAlert("TTS Error", "Could not play the example audio.");
+            };
+            speechSynthesis.speak(utterance);
+        });
+        
+        // --- User Recording and Playback ---
+        recordButton.addEventListener('click', async () => {
+            if (!speechRecognition) { showAlert("Error", "Speech recognition is not available."); return; }
+            if (isSpeakingExample) { showAlert("Busy", "Please wait for the example to finish."); return; }
+
             if (isRecording) {
-                speechRecognition.stop(); // This will trigger onend, which calls stopRecording
+                // This will trigger speechRecognition.onend, which calls stopUserRecording()
+                if(speechRecognition) speechRecognition.stop(); 
+                if(mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
             } else {
                 if (!sentences || sentences.length === 0) {
-                    showAlert("No Sentences", "There are no sentences to practice. Please add some in Teacher Mode.");
-                    return;
+                    showAlert("No Sentences", "There are no sentences to practice."); return;
                 }
                 if (!micPermissionGranted) {
                     try {
-                        // Request permission by trying to get user media. We don't actually use the stream here for this simple version.
                         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                         micPermissionGranted = true;
-                        stream.getTracks().forEach(track => track.stop()); // Release the mic immediately
+                        setupMediaRecorder(stream); 
+                        // We got the stream for MediaRecorder, SpeechRecognition will use its own internal mic access.
+                        // It's important to stop tracks of THIS stream when MediaRecorder is done with it if not used elsewhere.
+                        // However, SpeechRecognition also needs the mic. This is usually handled fine by the browser.
                     } catch (err) {
-                        console.error("Mic permission error on record click:", err);
-                        micPermissionGranted = false;
-                        let msg = "Error accessing microphone.";
-                        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') msg = "Microphone permission denied. Please allow microphone access in your browser settings.";
-                        else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') msg = "No microphone found.";
-                        showAlert("Microphone Error", msg);
-                        return; 
+                        handleMicPermissionError(err); return;
+                    }
+                } else if (!mediaRecorder || (mediaRecorder.stream && mediaRecorder.stream.getTracks().every(track => track.readyState === 'ended'))) {
+                    // If permission granted but stream is old/ended, get a new one for MediaRecorder
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        setupMediaRecorder(stream);
+                    } catch (err) {
+                        showAlert("Microphone Error", "Failed to re-initialize microphone."); return;
                     }
                 }
-                // Start recognition if permission is granted (or was already granted)
+                
+                if (!mediaRecorder && micPermissionGranted){ // If setupMediaRecorder failed after permission
+                     showAlert("Recorder Error", "Could not initialize audio recorder."); return;
+                }
+
+
                 if (micPermissionGranted) {
                     try {
+                        audioChunks = []; // Reset for new recording
+                        recordedAudioBlob = null;
+                        playRecordedAudioButton.disabled = true;
+                        recordedAudioPlayer.classList.add('hidden');
+                        recordedAudioPlayer.src = '';
+                        recognizedTextDisplay.textContent = ""; 
+                        resultFeedback.textContent = "";
+
+                        if(mediaRecorder) mediaRecorder.start();
                         speechRecognition.start();
-                        // onstart will handle UI changes for recording state
+                        
+                        isRecording = true; // Set state
+                        recordButtonText.textContent = "Stop Speaking";
+                        recordButton.classList.remove('btn-success');
+                        recordButton.classList.add('btn-danger');
+                        statusMessage.textContent = "Listening...";
+                        nextButton.disabled = true;
+                        speakExampleButton.disabled = true;
+
                     } catch (e) {
-                        console.error("Error starting speech recognition:", e);
-                        showAlert("Recognition Error", "Could not start speech recognition.");
-                        if (isRecording) stopRecording(); // Reset if somehow it was set to true
+                        console.error("Error starting recording:", e);
+                        showAlert("Recording Error", "Could not start recording.");
+                        if (isRecording) stopUserRecording(); 
                     }
                 }
             }
         });
 
-        function stopRecording() {
+        function setupMediaRecorder(stream) {
+            if (!stream) { console.error("No stream provided to setupMediaRecorder"); return; }
+            try {
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = event => {
+                    if (event.data.size > 0) audioChunks.push(event.data);
+                };
+                mediaRecorder.onstop = () => {
+                    if (audioChunks.length > 0) {
+                        recordedAudioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+                        const audioUrl = URL.createObjectURL(recordedAudioBlob);
+                        recordedAudioPlayer.src = audioUrl;
+                        playRecordedAudioButton.disabled = false;
+                    } else {
+                        playRecordedAudioButton.disabled = true;
+                        console.warn("No audio data recorded.");
+                    }
+                    // Stop tracks of the stream MediaRecorder was using, as it's done now.
+                    // This is important to release the microphone if SpeechRecognition is also done or uses a different mechanism.
+                    if (mediaRecorder && mediaRecorder.stream) {
+                         mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                    }
+                };
+                mediaRecorder.onerror = (event) => {
+                    console.error("MediaRecorder error:", event.error);
+                    statusMessage.textContent = "Error during audio recording.";
+                    showAlert("Recorder Error", "An error occurred with the audio recorder.");
+                    if (isRecording) stopUserRecording();
+                };
+            } catch (e) {
+                 console.error("Error setting up MediaRecorder:", e);
+                 showAlert("Recorder Setup Error", "Could not setup audio recorder. Your browser might not support it.");
+                 mediaRecorder = null;
+            }
+        }
+        
+        function handleMicPermissionError(err) {
+            console.error("Mic permission error:", err);
+            micPermissionGranted = false;
+            let msg = "Error accessing microphone.";
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') msg = "Microphone permission denied. Please allow microphone access in your browser settings.";
+            else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') msg = "No microphone found.";
+            showAlert("Microphone Error", msg);
+        }
+
+
+        function stopUserRecording() {
+            if (mediaRecorder && mediaRecorder.state === "recording") {
+                mediaRecorder.stop();
+            }
+            // SpeechRecognition might have already stopped and triggered this,
+            // but if called directly (e.g. from error), ensure it's stopped.
+            if (speechRecognition && isRecording) { // Check isRecording to avoid stopping if not actually started
+                try { speechRecognition.abort(); } // Use abort for immediate stop if needed, or stop()
+                catch(e){ console.warn("Error trying to stop speech recognition:", e); }
+            }
+
             isRecording = false;
             recordButtonText.textContent = "Start Speaking";
             recordButton.classList.remove('btn-danger');
             recordButton.classList.add('btn-success');
-            statusMessage.textContent = "Processing..."; // Or "Ready" if recognition is instant
-            if (sentences && sentences.length > 0) { // Only enable next if there are sentences
-                 nextButton.disabled = sentences.length <= 1 && currentSentenceIndex === (sentences.length -1);
+            statusMessage.textContent = "Processing..."; 
+            
+            if (sentences && sentences.length > 0) {
+                 nextButton.disabled = sentences.length <= 1;
             } else {
                 nextButton.disabled = true;
             }
+            speakExampleButton.disabled = false;
         }
+        
+        playRecordedAudioButton.addEventListener('click', () => {
+            if (recordedAudioPlayer.src && recordedAudioBlob) {
+                recordedAudioPlayer.classList.remove('hidden');
+                recordedAudioPlayer.play().catch(e => {
+                    console.error("Error playing recorded audio:", e);
+                    showAlert("Playback Error", "Could not play recorded audio.");
+                });
+            } else {
+                showAlert("No Recording", "No recorded audio available to play.");
+            }
+        });
         
         function comparePronunciation(original, recognized) {
             const normalize = (text) => text.toLowerCase().replace(/[.,?!']/g, "").trim();
@@ -533,7 +650,7 @@
                 statusMessage.textContent = "Recognition failed or no speech.";
                 return;
             }
-            statusMessage.textContent = "Recognition complete."; // Update status after comparison
+            statusMessage.textContent = "Recognition complete.";
 
             if (normalizedOriginal === normalizedRecognized) {
                 resultFeedback.textContent = "Excellent! That's correct!";
@@ -547,18 +664,24 @@
         nextButton.addEventListener('click', () => {
             if (!sentences || sentences.length === 0) return; 
             if (isRecording) {
-                speechRecognition.stop(); // Stop current recording if any
+                if(speechRecognition) speechRecognition.stop();
+                if(mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
+                stopUserRecording(); // Ensure UI is reset
+            }
+            if (isSpeakingExample) {
+                if(speechSynthesis && speechSynthesis.speaking) speechSynthesis.cancel();
+                isSpeakingExample = false; // Reset flag
             }
             currentSentenceIndex = (currentSentenceIndex + 1) % sentences.length;
             displayCurrentSentence(); 
             recordButton.disabled = false; 
+            speakExampleButton.disabled = false;
         });
 
         // --- Initial Setup ---
         loadSentencesFromStorage();
         displayCurrentSentence(); 
 
-        // Ensure student mode is active by default if teacher mode was last active and page reloaded
         if (teacherModeContainer.classList.contains('hidden')) {
             currentMode = 'student';
             toggleModeButton.textContent = 'Switch to Teacher Mode';
