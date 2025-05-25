@@ -36,7 +36,7 @@
             border: none;
             outline: none;
             margin: 0.5rem;
-            display: inline-flex; /* For aligning icon and text */
+            display: inline-flex; 
             align-items: center;
             justify-content: center;
         }
@@ -50,26 +50,26 @@
         .btn:focus {
             outline: 2px solid transparent;
             outline-offset: 2px;
-            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); /* Tailwind blue-300 focus ring */
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); 
         }
-        .btn-primary { background-color: #3b82f6; color: white; } /* blue-500 */
-        .btn-primary:hover:not(:disabled) { background-color: #2563eb; } /* blue-600 */
-        .btn-secondary { background-color: #6b7280; color: white; } /* gray-500 */
-        .btn-secondary:hover:not(:disabled) { background-color: #4b5563; } /* gray-600 */
-        .btn-success { background-color: #10b981; color: white; } /* green-500 */
-        .btn-success:hover:not(:disabled) { background-color: #059669; } /* green-600 */
-        .btn-danger { background-color: #ef4444; color: white; } /* red-500 */
-        .btn-danger:hover:not(:disabled) { background-color: #dc2626; } /* red-600 */
-        .btn-warning { background-color: #f59e0b; color: white; } /* amber-500 */
-        .btn-warning:hover:not(:disabled) { background-color: #d97706; } /* amber-600 */
-        .btn-info { background-color: #38bdf8; color: white; } /* sky-400 */
-        .btn-info:hover:not(:disabled) { background-color: #0ea5e9; } /* sky-500 */
+        .btn-primary { background-color: #3b82f6; color: white; } 
+        .btn-primary:hover:not(:disabled) { background-color: #2563eb; } 
+        .btn-secondary { background-color: #6b7280; color: white; } 
+        .btn-secondary:hover:not(:disabled) { background-color: #4b5563; } 
+        .btn-success { background-color: #10b981; color: white; } 
+        .btn-success:hover:not(:disabled) { background-color: #059669; } 
+        .btn-danger { background-color: #ef4444; color: white; } 
+        .btn-danger:hover:not(:disabled) { background-color: #dc2626; } 
+        .btn-warning { background-color: #f59e0b; color: white; } 
+        .btn-warning:hover:not(:disabled) { background-color: #d97706; } 
+        .btn-info { background-color: #38bdf8; color: white; } 
+        .btn-info:hover:not(:disabled) { background-color: #0ea5e9; } 
         
         .sentence-display { font-size: 1.5rem; font-weight: 500; margin-bottom: 1.5rem; padding: 1rem; background-color: #e5e7eb; border-radius: 0.5rem; min-height: 100px; display: flex; align-items: center; justify-content: center; color: #1f2937; }
-        .recognized-text-display { font-size: 1.125rem; margin-top: 1rem; padding: 0.75rem; background-color: #f9fafb; border: 1px solid #d1d5db; border-radius: 0.5rem; min-height: 60px; color: #4b5563; }
+        .recognized-text-display { font-size: 1.125rem; margin-top: 1rem; padding: 0.75rem; background-color: #f9fafb; border: 1px solid #d1d5db; border-radius: 0.5rem; min-height: 60px; color: #4b5563; line-height: 1.75; }
         .feedback-display { font-size: 1.25rem; font-weight: 600; margin-top: 1rem; min-height: 40px; }
-        .feedback-correct { color: #10b981; } /* green-500 */
-        .feedback-incorrect { color: #ef4444; } /* red-500 */
+        .feedback-correct { color: #10b981; } 
+        .feedback-incorrect { color: #ef4444; } 
         .status-message { margin-top: 1rem; color: #6b7280; min-height: 24px; }
         .footer-note { margin-top: 2rem; font-size: 0.875rem; color: #6b7280; }
 
@@ -88,63 +88,102 @@
         .modal-footer { text-align: right; }
         .close-btn { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; background: none; border: none; padding: 0; line-height: 1;}
         .close-btn:hover, .close-btn:focus { color: black; text-decoration: none; }
+
+        /* For diff highlighting */
+        .diff-correct { background-color: transparent; } /* Correct words, no special background */
+        .diff-missing { background-color: #fecaca; text-decoration: line-through; color: #b91c1c; } /* Light red background, red text, strikethrough for missing in spoken */
+        .diff-extra { background-color: #bbf7d0; color: #15803d; } /* Light green background, green text for extra in spoken */
+        .diff-substituted { background-color: #fed7aa; color: #c2410c; } /* Light orange for substituted */
+
+        .lang-toggle-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1001; /* Above modals */
+        }
+        .lang-toggle-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem; /* rounded-md */
+            font-weight: 500; /* font-medium */
+            background-color: #4b5563; /* gray-600 */
+            color: white;
+            border: 1px solid #6b7280; /* gray-500 */
+        }
+        .lang-toggle-btn:hover {
+            background-color: #374151; /* gray-700 */
+        }
+
     </style>
 </head>
 <body>
+    <div class="lang-toggle-container">
+        <button id="lang-toggle-btn" class="lang-toggle-btn">日本語</button>
+    </div>
+
     <div class="w-full max-w-md mx-auto my-4">
-        <button id="toggle-mode-btn" class="btn btn-primary w-full">Switch to Teacher Mode</button>
+        <button id="toggle-mode-btn" class="btn btn-primary w-full" data-en="Switch to Teacher Mode" data-ja="教師管理モードへ">Switch to Teacher Mode</button>
     </div>
 
     <div class="container" id="student-mode-container">
-        <h1 class="text-3xl font-bold mb-6 text-center text-blue-600">English Pronunciation Practice</h1>
-        <div id="sentence-display" class="sentence-display">Loading sentence...</div>
+        <h1 id="student-title" class="text-3xl font-bold mb-6 text-center text-blue-600" data-en="English Pronunciation Practice" data-ja="英語発音練習">English Pronunciation Practice</h1>
+        <div id="sentence-display" class="sentence-display" data-en-loading="Loading sentence..." data-ja-loading="問題文を読込中...">Loading sentence...</div>
         <div class="flex flex-wrap justify-center items-center mb-4">
             <button id="speak-example-btn" class="btn btn-primary">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
-                Speak Example
+                <span data-en="Speak Example" data-ja="例文を読み上げる">Speak Example</span>
             </button>
             <button id="record-btn" class="btn btn-success">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                <span id="record-btn-text">Start Speaking</span>
+                <span id="record-btn-text" data-en-start="Start Speaking" data-ja-start="発音開始" data-en-stop="Stop Speaking" data-ja-stop="発音停止">Start Speaking</span>
             </button>
             </div>
-        <div id="status-message" class="status-message">Ready</div>
+        <div id="status-message" class="status-message" data-en-ready="Ready" data-ja-ready="準備完了" 
+             data-en-listening="Listening..." data-ja-listening="認識中..."
+             data-en-processing="Processing..." data-ja-processing="処理中..."
+             data-en-error-prefix="Error: " data-ja-error-prefix="エラー: "
+             data-en-speak-example="Speaking example..." data-ja-speak-example="例文を読み上げ中..."
+             data-en-example-finished="Example finished. Ready to record." data-ja-example-finished="読み上げ完了。録音できます。"
+             data-en-error-speak-example="Error speaking example." data-ja-error-speak-example="例文読み上げエラー。"
+             data-en-recognition-complete="Recognition complete." data-ja-recognition-complete="認識完了。"
+             data-en-recognition-failed="Recognition failed or no speech." data-ja-recognition-failed="認識失敗または音声なし。"
+        >Ready</div>
         <div class="mt-4">
-            <h2 class="text-xl font-semibold mb-2">You Pronounced (Text):</h2>
+            <h2 id="you-pronounced-label" class="text-xl font-semibold mb-2" data-en="You Pronounced (Text):" data-ja="あなたの発音 (テキスト):">You Pronounced (Text):</h2>
             <div id="recognized-text" class="recognized-text-display"></div>
         </div>
-        <div id="result-feedback" class="feedback-display"></div>
+        <div id="result-feedback" class="feedback-display">
+             </div>
         <div class="mt-6 text-center">
-            <button id="next-btn" class="btn btn-secondary">Next Example</button>
+            <button id="next-btn" class="btn btn-secondary" data-en="Next Example" data-ja="次の例文へ">Next Example</button>
         </div>
     </div>
 
     <div class="container teacher-mode-container hidden" id="teacher-mode-container">
-        <h1 class="text-3xl font-bold mb-6 text-center text-blue-600">Manage Sentences</h1>
+        <h1 id="teacher-title" class="text-3xl font-bold mb-6 text-center text-blue-600" data-en="Manage Sentences" data-ja="問題文管理">Manage Sentences</h1>
         <div class="add-sentence-form mb-6">
-            <h2 class="text-xl font-semibold mb-2 text-left">Add New Sentence</h2>
-            <textarea id="new-sentence-text" placeholder="Enter new sentence here..."></textarea>
-            <button id="add-sentence-btn" class="btn btn-success w-full">Add Sentence</button>
+            <h2 id="add-new-sentence-label" class="text-xl font-semibold mb-2 text-left" data-en="Add New Sentence" data-ja="新しい問題文を追加">Add New Sentence</h2>
+            <textarea id="new-sentence-text" data-en-placeholder="Enter new sentence here..." data-ja-placeholder="ここに新しい問題文を入力してください..."></textarea>
+            <button id="add-sentence-btn" class="btn btn-success w-full" data-en="Add Sentence" data-ja="追加する">Add Sentence</button>
         </div>
         <div>
-            <h2 class="text-xl font-semibold mb-2 text-left">Registered Sentences List</h2>
+            <h2 id="registered-sentences-label" class="text-xl font-semibold mb-2 text-left" data-en="Registered Sentences List" data-ja="登録済み問題文リスト">Registered Sentences List</h2>
             <div id="sentence-list" class="space-y-2"></div>
-            <p id="no-sentences-message" class="text-gray-500 mt-4 hidden">No sentences registered yet.</p>
+            <p id="no-sentences-message" class="text-gray-500 mt-4 hidden" data-en="No sentences registered yet." data-ja="登録されている問題文はありません。">No sentences registered yet.</p>
         </div>
     </div>
 
     <div id="edit-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title">Edit Sentence</h2>
+                <h2 id="edit-modal-title" class="modal-title" data-en="Edit Sentence" data-ja="問題文を編集">Edit Sentence</h2>
                 <span class="close-btn" id="close-edit-modal-btn">&times;</span>
             </div>
             <div class="modal-body">
                 <textarea id="edit-sentence-input"></textarea>
             </div>
             <div class="modal-footer">
-                <button id="save-edit-btn" class="btn btn-primary">Save Changes</button>
-                <button id="cancel-edit-btn" class="btn btn-secondary">Cancel</button>
+                <button id="save-edit-btn" class="btn btn-primary" data-en="Save Changes" data-ja="保存する">Save Changes</button>
+                <button id="cancel-edit-btn" class="btn btn-secondary" data-en="Cancel" data-ja="キャンセル">Cancel</button>
             </div>
         </div>
     </div>
@@ -159,7 +198,7 @@
                 <p id="custom-alert-message"></p>
             </div>
             <div class="modal-footer">
-                <button id="custom-alert-ok-btn" class="btn btn-primary">OK</button>
+                <button id="custom-alert-ok-btn" class="btn btn-primary" data-en="OK" data-ja="OK">OK</button>
             </div>
         </div>
     </div>
@@ -174,13 +213,13 @@
                 <p id="custom-confirm-message"></p>
             </div>
             <div class="modal-footer">
-                <button id="custom-confirm-yes-btn" class="btn btn-danger">Yes</button>
-                <button id="custom-confirm-no-btn" class="btn btn-secondary">No</button>
+                <button id="custom-confirm-yes-btn" class="btn btn-danger" data-en="Yes" data-ja="はい">Yes</button>
+                <button id="custom-confirm-no-btn" class="btn btn-secondary" data-en="No" data-ja="いいえ">No</button>
             </div>
         </div>
     </div>
 
-    <p class="footer-note">
+    <p id="footer-text" class="footer-note" data-en="This app uses the browser's Web Speech API. For the best experience, please use the latest version of Google Chrome. Microphone permission is required." data-ja="このアプリはブラウザのWeb Speech APIを使用しています。最高の体験を得るには、最新版のGoogle Chromeをご利用ください。マイクの使用許可が必要です。">
         This app uses the browser's Web Speech API. For the best experience, please use the latest version of Google Chrome. Microphone permission is required.
     </p>
 
@@ -191,6 +230,131 @@
             "The quick brown fox jumps over the lazy dog."
         ];
         let sentences = [];
+        let currentLanguage = localStorage.getItem('appLanguage') || 'en'; // 'en' or 'ja'
+
+        const i18n = {
+            en: {
+                // Alert/Confirm Titles
+                success: "Success",
+                inputRequired: "Input Required",
+                confirmDeletion: "Confirm Deletion",
+                error: "Error",
+                micError: "Microphone Error",
+                ttsError: "TTS Error",
+                recognitionError: "Recognition Error",
+                actionInProgress: "Action in Progress",
+                busy: "Busy",
+                noSentences: "No Sentences",
+                ttsNotSupported: "TTS Not Supported",
+                speechRecognitionNotSupported: "Speech Recognition Not Supported",
+                // Alert/Confirm Messages
+                sentenceAdded: "Sentence added successfully.",
+                enterSentence: "Please enter a sentence.",
+                confirmDeleteMsg: (sentence) => `Are you sure you want to delete "${sentence}"?`,
+                sentenceDeleted: "Sentence deleted successfully.",
+                sentenceUpdated: "Sentence updated successfully.",
+                stopActionBeforeSwitch: "Please stop the current action before switching modes.",
+                micPermissionDenied: "Microphone permission denied. Please allow microphone access in your browser settings.",
+                noMicFound: "No microphone found.",
+                errorAccessingMic: "Error accessing microphone.",
+                couldNotPlayExample: "Could not play the example audio.",
+                couldNotStartRecognition: "Could not start speech recognition.",
+                noSentencesToPractice: "There are no sentences to practice. Please add some in Teacher Mode.",
+                // Feedback
+                feedbackCorrect: "Excellent! That's correct!",
+                feedbackIncorrect: "Not quite. Try again!",
+                feedbackNoOriginal: "Error: No reference sentence loaded.",
+                feedbackNoRecognized: "Could not understand your speech. Try again.",
+                // Button text is handled by data attributes mostly
+                edit: "Edit",
+                delete: "Delete",
+                langToggleJA: "日本語",
+                langToggleEN: "English",
+                noSpeech: "No speech was detected.",
+                micAccessIssue: "Microphone access issue.",
+                networkError: "Network error during recognition."
+
+            },
+            ja: {
+                // Alert/Confirm Titles
+                success: "成功",
+                inputRequired: "入力必須",
+                confirmDeletion: "削除の確認",
+                error: "エラー",
+                micError: "マイクエラー",
+                ttsError: "音声合成エラー",
+                recognitionError: "音声認識エラー",
+                actionInProgress: "処理実行中",
+                busy: "処理中",
+                noSentences: "問題文なし",
+                ttsNotSupported: "音声合成非対応",
+                speechRecognitionNotSupported: "音声認識非対応",
+                // Alert/Confirm Messages
+                sentenceAdded: "問題文が追加されました。",
+                enterSentence: "問題文を入力してください。",
+                confirmDeleteMsg: (sentence) => `「${sentence}」を削除してもよろしいですか？`,
+                sentenceDeleted: "問題文が削除されました。",
+                sentenceUpdated: "問題文が更新されました。",
+                stopActionBeforeSwitch: "モードを切り替える前に現在の操作を停止してください。",
+                micPermissionDenied: "マイクの使用が許可されていません。ブラウザの設定でマイクへのアクセスを許可してください。",
+                noMicFound: "マイクが見つかりませんでした。",
+                errorAccessingMic: "マイクへのアクセス中にエラーが発生しました。",
+                couldNotPlayExample: "例文の音声を再生できませんでした。",
+                couldNotStartRecognition: "音声認識を開始できませんでした。",
+                noSentencesToPractice: "練習する問題文がありません。教師管理モードで追加してください。",
+                // Feedback
+                feedbackCorrect: "素晴らしい！正確です！",
+                feedbackIncorrect: "惜しい！もう一度試してみましょう。",
+                feedbackNoOriginal: "エラー：お手本が読み込まれていません。",
+                feedbackNoRecognized: "発話を認識できませんでした。もう一度試してください。",
+                // Button text is handled by data attributes mostly
+                edit: "編集",
+                delete: "削除",
+                langToggleJA: "日本語",
+                langToggleEN: "English",
+                noSpeech: "音声が検出されませんでした。",
+                micAccessIssue: "マイクアクセスに問題があります。",
+                networkError: "認識中にネットワークエラーが発生しました。"
+            }
+        };
+
+        function _(key, ...args) {
+            let str = i18n[currentLanguage][key] || i18n['en'][key] || key; 
+            if (typeof str === 'function') {
+                return str(...args);
+            }
+            return str;
+        }
+
+        function updateUILanguage() { // Renamed function
+            document.querySelectorAll('[data-en]').forEach(el => {
+                const textKey = currentLanguage === 'ja' ? el.dataset.ja : el.dataset.en;
+                if (textKey) {
+                    if (el.tagName === 'TEXTAREA' && el.hasAttribute('placeholder')) {
+                        el.placeholder = textKey;
+                    } else if (el.dataset.enPlaceholder && el.dataset.jaPlaceholder) { 
+                         el.placeholder = currentLanguage === 'ja' ? el.dataset.jaPlaceholder : el.dataset.enPlaceholder;
+                    } else {
+                        if (el.id === 'record-btn-text') {
+                            el.textContent = isRecording ? 
+                                (currentLanguage === 'ja' ? el.dataset.jaStop : el.dataset.enStop) :
+                                (currentLanguage === 'ja' ? el.dataset.jaStart : el.dataset.enStart);
+                        } else {
+                            el.textContent = textKey;
+                        }
+                    }
+                }
+            });
+            updateStatusMessageUI();
+            const sentenceDisp = document.getElementById('sentence-display');
+            if (sentenceDisp.textContent === sentenceDisp.dataset.enLoading || sentenceDisp.textContent === sentenceDisp.dataset.jaLoading) {
+                 sentenceDisp.textContent = currentLanguage === 'ja' ? sentenceDisp.dataset.jaLoading : sentenceDisp.dataset.enLoading;
+            }
+            langToggleButton.textContent = currentLanguage === 'en' ? _('langToggleJA') : _('langToggleEN');
+             // Update toggle mode button text based on current mode and language
+            updateToggleModeButtonText();
+        }
+
 
         let currentSentenceIndex = 0;
         let speechRecognition;
@@ -199,26 +363,18 @@
         let micPermissionGranted = false;
         let currentMode = 'student';
         let editingSentenceIndex = -1;
-        let isRecording = false; // For SpeechRecognition
-        let isSpeakingExample = false; // For SpeechSynthesis
+        let isRecording = false; 
+        let isSpeakingExample = false; 
 
-        // MediaRecorder related variables removed
-        // let mediaRecorder;
-        // let audioChunks = [];
-        // let recordedAudioBlob = null;
-
-
-        // DOM Elements
         const sentenceDisplay = document.getElementById('sentence-display');
         const recordButton = document.getElementById('record-btn');
         const recordButtonText = document.getElementById('record-btn-text');
         const speakExampleButton = document.getElementById('speak-example-btn');
-        // const playRecordedAudioButton = document.getElementById('play-recorded-audio-btn'); // Removed
-        // const recordedAudioPlayer = document.getElementById('recorded-audio-player'); // Removed
         const recognizedTextDisplay = document.getElementById('recognized-text');
         const resultFeedback = document.getElementById('result-feedback');
         const nextButton = document.getElementById('next-btn');
         const statusMessage = document.getElementById('status-message');
+        const langToggleButton = document.getElementById('lang-toggle-btn');
 
         const toggleModeButton = document.getElementById('toggle-mode-btn');
         const studentModeContainer = document.getElementById('student-mode-container');
@@ -247,17 +403,17 @@
         const customConfirmNoButton = document.getElementById('custom-confirm-no-btn');
         const closeConfirmModalButton = document.getElementById('close-confirm-modal-btn');
 
-        function showAlert(title, message) {
-            customAlertTitle.textContent = title;
-            customAlertMessage.textContent = message;
+        function showAlert(titleKey, messageKey, ...messageArgs) {
+            customAlertTitle.textContent = _(titleKey);
+            customAlertMessage.textContent = _(messageKey, ...messageArgs);
             customAlertModal.style.display = 'flex';
         }
         customAlertOkButton.addEventListener('click', () => customAlertModal.style.display = 'none');
         closeAlertModalButton.addEventListener('click', () => customAlertModal.style.display = 'none');
 
-        function showConfirm(title, message, callback) {
-            customConfirmTitle.textContent = title;
-            customConfirmMessage.textContent = message;
+        function showConfirm(titleKey, messageKey, messageArg, callback) {
+            customConfirmTitle.textContent = _(titleKey);
+            customConfirmMessage.textContent = _(messageKey, messageArg);
             customConfirmModal.style.display = 'flex';
             const newYesButton = customConfirmYesButton.cloneNode(true);
             customConfirmYesButton.parentNode.replaceChild(newYesButton, customConfirmYesButton);
@@ -265,6 +421,8 @@
             customConfirmNoButton.parentNode.replaceChild(newNoButton, customConfirmNoButton);
             newYesButton.onclick = () => { customConfirmModal.style.display = 'none'; callback(true); };
             newNoButton.onclick = () => { customConfirmModal.style.display = 'none'; callback(false); };
+            newYesButton.textContent = _('Yes'); 
+            newNoButton.textContent = _('No'); 
         }
         closeConfirmModalButton.addEventListener('click', () => customConfirmModal.style.display = 'none');
         cancelEditButton.addEventListener('click', () => closeEditModal());
@@ -278,26 +436,25 @@
 
         function toggleMode() {
             if (isRecording || isSpeakingExample) {
-                showAlert("Action in Progress", "Please stop the current action before switching modes.");
+                showAlert("actionInProgress", "stopActionBeforeSwitch");
                 return;
             }
             if (currentMode === 'student') {
                 currentMode = 'teacher';
-                toggleModeButton.textContent = 'Switch to Student Mode';
                 studentModeContainer.classList.add('hidden');
                 teacherModeContainer.classList.remove('hidden');
                 renderSentenceList();
             } else {
                 currentMode = 'student';
-                toggleModeButton.textContent = 'Switch to Teacher Mode';
                 studentModeContainer.classList.remove('hidden');
                 teacherModeContainer.classList.add('hidden');
                 loadSentencesFromStorage(); 
                 currentSentenceIndex = 0; 
                 displayCurrentSentence();
             }
+            updateUILanguage(); 
         }
-        toggleModeButton.addEventListener('click', toggleMode);
+        // toggleModeButton.addEventListener('click', toggleMode); // Will be reassigned later
 
         function renderSentenceList() {
             sentenceList.innerHTML = '';
@@ -308,9 +465,11 @@
                 const textSpan = document.createElement('span'); textSpan.className = 'sentence-text';
                 textSpan.textContent = sentence.length > 50 ? sentence.substring(0, 50) + '...' : sentence;
                 const actionsDiv = document.createElement('div'); actionsDiv.className = 'sentence-actions';
-                const editBtn = document.createElement('button'); editBtn.className = 'btn btn-warning'; editBtn.textContent = 'Edit';
+                const editBtn = document.createElement('button'); editBtn.className = 'btn btn-warning'; 
+                editBtn.textContent = _('edit');
                 editBtn.onclick = () => openEditModal(index);
-                const deleteBtn = document.createElement('button'); deleteBtn.className = 'btn btn-danger'; deleteBtn.textContent = 'Delete';
+                const deleteBtn = document.createElement('button'); deleteBtn.className = 'btn btn-danger'; 
+                deleteBtn.textContent = _('delete');
                 deleteBtn.onclick = () => deleteSentence(index);
                 actionsDiv.appendChild(editBtn); actionsDiv.appendChild(deleteBtn);
                 listItem.appendChild(textSpan); listItem.appendChild(actionsDiv);
@@ -321,23 +480,24 @@
             const text = newSentenceText.value.trim();
             if (text) {
                 sentences.push(text); saveSentencesToStorage(); renderSentenceList();
-                newSentenceText.value = ''; showAlert('Success', 'Sentence added successfully.');
-            } else { showAlert('Input Required', 'Please enter a sentence.'); }
+                newSentenceText.value = ''; showAlert('success', 'sentenceAdded');
+            } else { showAlert('inputRequired', 'enterSentence'); }
         }
         addSentenceButton.addEventListener('click', addSentence);
 
         function deleteSentence(index) {
             const sentenceToDelete = sentences[index].substring(0,30) + (sentences[index].length > 30 ? "..." : "");
-            showConfirm('Confirm Deletion', `Are you sure you want to delete "${sentenceToDelete}"?`, (confirmed) => {
+            showConfirm('confirmDeletion', 'confirmDeleteMsg', sentenceToDelete, (confirmed) => {
                 if (confirmed) {
                     sentences.splice(index, 1); saveSentencesToStorage(); renderSentenceList();
-                    showAlert('Success', 'Sentence deleted successfully.');
+                    showAlert('success', 'sentenceDeleted');
                 }
             });
         }
         function openEditModal(index) {
             editingSentenceIndex = index; editSentenceInput.value = sentences[index];
             editModal.style.display = 'flex';
+            updateUILanguage(); 
         }
         function closeEditModal() { editModal.style.display = 'none'; editingSentenceIndex = -1; }
         closeEditModalButton.addEventListener('click', closeEditModal);
@@ -350,12 +510,11 @@
             const newText = editSentenceInput.value.trim();
             if (newText && editingSentenceIndex > -1) {
                 sentences[editingSentenceIndex] = newText; saveSentencesToStorage(); renderSentenceList();
-                closeEditModal(); showAlert('Success', 'Sentence updated successfully.');
-            } else if (!newText) { showAlert('Input Required', 'Please enter a sentence.'); }
+                closeEditModal(); showAlert('success', 'sentenceUpdated');
+            } else if (!newText) { showAlert('inputRequired', 'enterSentence'); }
         }
         saveEditButton.addEventListener('click', saveEditedSentence);
 
-        // --- Speech Synthesis Setup ---
         if ('speechSynthesis' in window) {
             speechSynthesis.onvoiceschanged = () => {
                 const voices = speechSynthesis.getVoices();
@@ -368,11 +527,10 @@
                 speechSynthesis.onvoiceschanged();
             }
         } else {
-            showAlert("TTS Not Supported", "Your browser does not support text-to-speech.");
+            showAlert("ttsNotSupported", "Your browser does not support text-to-speech.");
             if(speakExampleButton) speakExampleButton.disabled = true;
         }
         
-        // --- Speech Recognition Setup ---
         if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
             const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
             speechRecognition = new SpeechRecognitionAPI();
@@ -383,32 +541,24 @@
 
             speechRecognition.onresult = (event) => {
                 const recognized = event.results[0][0].transcript.trim();
-                recognizedTextDisplay.textContent = recognized;
                 comparePronunciation(sentences[currentSentenceIndex], recognized);
             };
             speechRecognition.onerror = (event) => {
                 console.error("Speech recognition error:", event.error, event.message);
-                let msg = "Speech recognition error.";
-                if (event.error === 'no-speech') msg = "No speech was detected.";
-                else if (event.error === 'audio-capture') msg = "Microphone access issue.";
+                let msgKey = "recognitionError"; 
+                if (event.error === 'no-speech') msgKey = "noSpeech";
+                else if (event.error === 'audio-capture') msgKey = "micAccessIssue";
                 else if (event.error === 'not-allowed') {
-                    msg = "Microphone permission denied. Please allow microphone access in your browser settings.";
-                    micPermissionGranted = false; 
-                } else if (event.error === 'network') msg = "Network error during recognition.";
-                else msg = `Unexpected error: ${event.error}`;
-                statusMessage.textContent = msg;
+                    msgKey = "micPermissionDenied"; micPermissionGranted = false; 
+                } else if (event.error === 'network') msgKey = "networkError";
+                
+                statusMessage.textContent = _(statusMessage.dataset.enErrorPrefix || "Error: ") + _(msgKey);
                 if (isRecording) stopSpeechRecognition(); 
             };
-            speechRecognition.onstart = () => {
-                // UI updates handled in recordButton.addEventListener
-            };
-            speechRecognition.onend = () => {
-                if (isRecording) { 
-                    stopSpeechRecognition(); 
-                }
-            };
+            speechRecognition.onstart = () => { /* UI handled by recordButton listener */ };
+            speechRecognition.onend = () => { if (isRecording) stopSpeechRecognition(); };
         } else {
-            statusMessage.textContent = "Your browser doesn't support speech recognition.";
+            statusMessage.textContent = _("speechRecognitionNotSupported");
             disableStudentModeControls();
         }
         
@@ -416,7 +566,6 @@
             if(recordButton) recordButton.disabled = disableAll;
             if(nextButton) nextButton.disabled = disableAll;
             if(speakExampleButton && disableAll) speakExampleButton.disabled = true;
-            // playRecordedAudioButton related logic removed
         }
 
         function displayCurrentSentence() {
@@ -426,20 +575,18 @@
                 recordButton.disabled = false;
                 if(speakExampleButton) speakExampleButton.disabled = false;
             } else {
-                sentenceDisplay.textContent = "No sentences available. Add some in Teacher Mode.";
+                sentenceDisplay.textContent = _("noSentencesToPractice");
                 disableStudentModeControls();
             }
-            recognizedTextDisplay.textContent = "";
+            recognizedTextDisplay.innerHTML = ""; 
             resultFeedback.textContent = "";
-            // playRecordedAudioButton and recordedAudioPlayer logic removed
-            if (statusMessage) statusMessage.textContent = "Ready";
+            updateStatusMessageUI("ready");
         }
 
-        // --- Speak Example Function ---
         speakExampleButton.addEventListener('click', () => {
             if (!speechSynthesis || !sentences || sentences.length === 0 || isRecording || isSpeakingExample) {
-                if(isRecording) showAlert("Busy", "Please stop recording first.");
-                if(isSpeakingExample) showAlert("Busy", "Already speaking.");
+                if(isRecording) showAlert("busy", "stopActionBeforeSwitch"); 
+                if(isSpeakingExample) showAlert("busy", "Already speaking."); 
                 return;
             }
             if (speechSynthesis.speaking) speechSynthesis.cancel();
@@ -452,42 +599,40 @@
             isSpeakingExample = true;
             speakExampleButton.disabled = true;
             recordButton.disabled = true; 
-            statusMessage.textContent = "Speaking example...";
+            updateStatusMessageUI("speak-example");
 
             utterance.onend = () => {
                 isSpeakingExample = false;
                 speakExampleButton.disabled = false;
                 recordButton.disabled = false;
-                statusMessage.textContent = "Example finished. Ready to record.";
+                updateStatusMessageUI("example-finished");
             };
             utterance.onerror = (e) => {
                 isSpeakingExample = false;
                 speakExampleButton.disabled = false;
                 recordButton.disabled = false;
-                statusMessage.textContent = "Error speaking example.";
+                updateStatusMessageUI("error-speak-example");
                 console.error("SpeechSynthesis Error:", e);
-                showAlert("TTS Error", "Could not play the example audio.");
+                showAlert("ttsError", "couldNotPlayExample");
             };
             speechSynthesis.speak(utterance);
         });
         
-        // --- User Speech Recognition ---
         recordButton.addEventListener('click', async () => {
-            if (!speechRecognition) { showAlert("Error", "Speech recognition is not available."); return; }
-            if (isSpeakingExample) { showAlert("Busy", "Please wait for the example to finish."); return; }
+            if (!speechRecognition) { showAlert("error", "speechRecognitionNotSupported"); return; }
+            if (isSpeakingExample) { showAlert("busy", "Please wait for the example to finish."); return; }
 
             if (isRecording) {
                 if(speechRecognition) speechRecognition.stop(); 
             } else {
                 if (!sentences || sentences.length === 0) {
-                    showAlert("No Sentences", "There are no sentences to practice."); return;
+                    showAlert("noSentences", "noSentencesToPractice"); return;
                 }
                 if (!micPermissionGranted) {
                     try {
-                        // Request permission. We don't need to keep the stream for this simplified version.
                         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                         micPermissionGranted = true;
-                        stream.getTracks().forEach(track => track.stop()); // Release mic immediately
+                        stream.getTracks().forEach(track => track.stop()); 
                     } catch (err) {
                         handleMicPermissionError(err); return;
                     }
@@ -495,22 +640,19 @@
 
                 if (micPermissionGranted) {
                     try {
-                        recognizedTextDisplay.textContent = ""; 
+                        recognizedTextDisplay.innerHTML = ""; 
                         resultFeedback.textContent = "";
-                        
                         speechRecognition.start();
-                        
                         isRecording = true; 
-                        recordButtonText.textContent = "Stop Speaking";
+                        recordButtonText.textContent = _(recordButtonText.dataset.enStop, recordButtonText.dataset.jaStop);
                         recordButton.classList.remove('btn-success');
                         recordButton.classList.add('btn-danger');
-                        statusMessage.textContent = "Listening...";
+                        updateStatusMessageUI("listening");
                         nextButton.disabled = true;
                         speakExampleButton.disabled = true;
-
                     } catch (e) {
                         console.error("Error starting speech recognition:", e);
-                        showAlert("Recognition Error", "Could not start speech recognition.");
+                        showAlert("recognitionError", "couldNotStartRecognition");
                         if (isRecording) stopSpeechRecognition(); 
                     }
                 }
@@ -520,26 +662,22 @@
         function handleMicPermissionError(err) {
             console.error("Mic permission error:", err);
             micPermissionGranted = false;
-            let msg = "Error accessing microphone.";
-            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') msg = "Microphone permission denied. Please allow microphone access in your browser settings.";
-            else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') msg = "No microphone found.";
-            showAlert("Microphone Error", msg);
+            let msgKey = "errorAccessingMic";
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') msgKey = "micPermissionDenied";
+            else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') msgKey = "noMicFound";
+            showAlert("micError", msgKey);
         }
 
         function stopSpeechRecognition() {
-            // This function is called by speechRecognition.onend or directly
             if (speechRecognition && isRecording) { 
-                try { 
-                    // speechRecognition.stop(); // onend should handle this, but abort can be more immediate if needed
-                } 
-                catch(e){ console.warn("Error trying to stop speech recognition (might be already stopped):", e); }
+                try { /* speechRecognition.stop(); // onend should handle this */ } 
+                catch(e){ console.warn("Error trying to stop speech recognition:", e); }
             }
-
             isRecording = false;
-            recordButtonText.textContent = "Start Speaking";
+            recordButtonText.textContent = _(recordButtonText.dataset.enStart, recordButtonText.dataset.jaStart);
             recordButton.classList.remove('btn-danger');
             recordButton.classList.add('btn-success');
-            statusMessage.textContent = "Processing..."; 
+            updateStatusMessageUI("processing");
             
             if (sentences && sentences.length > 0) {
                  nextButton.disabled = sentences.length <= 1;
@@ -549,62 +687,106 @@
             speakExampleButton.disabled = false;
         }
         
-        // Play recorded audio button event listener removed
-        
         function comparePronunciation(original, recognized) {
             const normalize = (text) => text.toLowerCase().replace(/[.,?!']/g, "").trim();
             const normalizedOriginal = normalize(original);
             const normalizedRecognized = normalize(recognized);
 
             if (!normalizedOriginal) { 
-                resultFeedback.textContent = "Error: No reference sentence loaded.";
+                resultFeedback.textContent = _("feedbackNoOriginal");
                 resultFeedback.className = "feedback-display feedback-incorrect";
                 return;
             }
             if (!normalizedRecognized) { 
-                resultFeedback.textContent = "Could not understand your speech. Try again.";
+                resultFeedback.textContent = _("feedbackNoRecognized");
                 resultFeedback.className = "feedback-display feedback-incorrect";
-                statusMessage.textContent = "Recognition failed or no speech.";
+                updateStatusMessageUI("recognition-failed");
                 return;
             }
-            statusMessage.textContent = "Recognition complete.";
+            updateStatusMessageUI("recognition-complete");
 
-            if (normalizedOriginal === normalizedRecognized) {
-                resultFeedback.textContent = "Excellent! That's correct!";
+            const diff = Diff.diffWords(normalizedOriginal, normalizedRecognized, {ignoreCase: true});
+            let diffHtml = '';
+            let isCorrectOverall = true;
+            diff.forEach(part => {
+                const className = part.added ? 'diff-extra' :
+                                part.removed ? 'diff-missing' : 'diff-correct';
+                if (part.added || part.removed) isCorrectOverall = false;
+                diffHtml += `<span class="${className}">${part.value}</span>`;
+            });
+            recognizedTextDisplay.innerHTML = diffHtml;
+
+            if (isCorrectOverall && normalizedOriginal.split(' ').length === normalizedRecognized.split(' ').length) { 
+                resultFeedback.textContent = _("feedbackCorrect");
                 resultFeedback.className = "feedback-display feedback-correct";
             } else {
-                resultFeedback.textContent = "Not quite. Try again!";
+                resultFeedback.textContent = _("feedbackIncorrect");
                 resultFeedback.className = "feedback-display feedback-incorrect";
             }
         }
 
         nextButton.addEventListener('click', () => {
             if (!sentences || sentences.length === 0) return; 
-            if (isRecording) {
-                if(speechRecognition) speechRecognition.stop();
-                // stopUserRecording(); // Now stopSpeechRecognition
-            }
-            if (isSpeakingExample) {
-                if(speechSynthesis && speechSynthesis.speaking) speechSynthesis.cancel();
-                isSpeakingExample = false; 
-            }
+            if (isRecording) { if(speechRecognition) speechRecognition.stop(); }
+            if (isSpeakingExample) { if(speechSynthesis && speechSynthesis.speaking) speechSynthesis.cancel(); isSpeakingExample = false; }
             currentSentenceIndex = (currentSentenceIndex + 1) % sentences.length;
             displayCurrentSentence(); 
             recordButton.disabled = false; 
             speakExampleButton.disabled = false;
         });
 
+        langToggleButton.addEventListener('click', () => {
+            currentLanguage = currentLanguage === 'en' ? 'ja' : 'en';
+            localStorage.setItem('appLanguage', currentLanguage);
+            updateUILanguage();
+        });
+        
+        function updateStatusMessageUI(statusKey) {
+            if (statusMessage && statusKey) {
+                 const keyPrefix = currentLanguage === 'ja' ? 'ja-' : 'en-';
+                 const fullKey = statusMessage.dataset[keyPrefix + statusKey];
+                 if (fullKey) {
+                    statusMessage.textContent = fullKey;
+                 } else { // Fallback if a specific statusKey isn't in dataset
+                    statusMessage.textContent = _(statusKey); // Try direct i18n lookup
+                 }
+            } else if (statusMessage) { 
+                 statusMessage.textContent = _(statusMessage.dataset.enReady, statusMessage.dataset.jaReady);
+            }
+        }
+
+        function updateToggleModeButtonText() {
+            const enKey = currentMode === 'student' ? toggleModeButton.dataset.enSwitchToTeacherMode : toggleModeButton.dataset.enSwitchToStudentMode;
+            const jaKey = currentMode === 'student' ? toggleModeButton.dataset.jaSwitchToTeacherMode : toggleModeButton.dataset.jaSwitchToStudentMode;
+            toggleModeButton.textContent = currentLanguage === 'ja' ? jaKey : enKey;
+        }
+        
         // --- Initial Setup ---
         loadSentencesFromStorage();
+        // Add data attributes for toggle button if missing (for initial load before updateUILanguage)
+        if (!toggleModeButton.dataset.enSwitchToTeacherMode) {
+            toggleModeButton.dataset.enSwitchToTeacherMode = "Switch to Teacher Mode";
+            toggleModeButton.dataset.jaSwitchToTeacherMode = "教師管理モードへ";
+            toggleModeButton.dataset.enSwitchToStudentMode = "Switch to Student Mode";
+            toggleModeButton.dataset.jaSwitchToStudentMode = "学習者モードへ";
+        }
+        updateUILanguage(); 
         displayCurrentSentence(); 
 
         if (teacherModeContainer.classList.contains('hidden')) {
             currentMode = 'student';
-            toggleModeButton.textContent = 'Switch to Teacher Mode';
         } else {
             currentMode = 'teacher';
-            toggleModeButton.textContent = 'Switch to Student Mode';
         }
+        updateToggleModeButtonText(); 
+
+        const originalToggleModeFn = toggleMode; // Keep a reference to the original toggleMode
+        toggleModeButton.onclick = () => { // Reassign to include UI text update
+            originalToggleModeFn();
+            updateToggleModeButtonText(); 
+        };
+
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/diff/5.1.0/diff.min.js"></script>
 </body>
 </html>
