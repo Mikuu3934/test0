@@ -3,611 +3,853 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>英語発音練習アプリ</title>
+    <title>英単語学習アプリ (間違えた単語確認モード付き)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
+        }
+        .card {
+            min-height: 220px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #f3f4f6;
-            color: #374151;
-            padding: 1rem;
-            text-align: center;
+            justify-content: space-between;
         }
-        .container {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            width: 100%;
-            max-width: 700px;
-            margin-top: 1rem;
+        .word-display {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #1E40AF;
+            margin-bottom: 0.5rem;
+            min-height: 60px;
+        }
+        .meaning-display {
+            font-size: 1.15rem;
+            color: #374151;
+            min-height: 40px;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .meaning-hidden {
+            opacity: 0;
         }
         .btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: background-color 0.3s, transform 0.1s;
-            cursor: pointer;
-            border: none;
-            outline: none;
-            margin: 0.5rem;
+            transition: background-color 0.3s ease;
         }
         .btn:disabled {
-            opacity: 0.7;
+            background-color: #9ca3af; /* gray-400 */
             cursor: not-allowed;
         }
-        .btn:focus {
-            outline: 2px solid transparent;
-            outline-offset: 2px;
-            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5);
+        .modal {
+            transition: opacity 0.25s ease;
         }
-        .btn-primary { background-color: #3b82f6; color: white; }
-        .btn-primary:hover:not(:disabled) { background-color: #2563eb; }
-        .btn-secondary { background-color: #6b7280; color: white; }
-        .btn-secondary:hover:not(:disabled) { background-color: #4b5563; }
-        .btn-success { background-color: #10b981; color: white; }
-        .btn-success:hover:not(:disabled) { background-color: #059669; }
-        .btn-danger { background-color: #ef4444; color: white; }
-        .btn-danger:hover:not(:disabled) { background-color: #dc2626; }
-        .btn-warning { background-color: #f59e0b; color: white; }
-        .btn-warning:hover:not(:disabled) { background-color: #d97706; }
-        .btn-info { background-color: #38bdf8; color: white; } /* Tailwind sky-400 */
-        .btn-info:hover:not(:disabled) { background-color: #0ea5e9; } /* Tailwind sky-500 */
+        .modal-content {
+            transition: transform 0.25s ease;
+        }
+        .custom-checkbox {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 0.25rem;
+            border-color: #60A5FA;
+        }
+        .custom-checkbox:checked {
+            background-color: #3B82F6;
+            border-color: #3B82F6;
+        }
+        .icon-btn {
+            background: none;
+            border: none;
+            padding: 0.25rem;
+            cursor: pointer;
+        }
+        .icon-btn svg {
+            width: 1.25rem; /* 20px */
+            height: 1.25rem; /* 20px */
+            fill: currentColor;
+        }
+        .edit-btn { color: #2563EB; /* blue-600 */ }
+        .edit-btn:hover { color: #1D4ED8; /* blue-700 */ }
+        .delete-btn { color: #EF4444; /* red-500 */ }
+        .delete-btn:hover { color: #DC2626; /* red-600 */ }
 
-
-        .sentence-display { font-size: 1.5rem; font-weight: 500; margin-bottom: 1.5rem; padding: 1rem; background-color: #e5e7eb; border-radius: 0.5rem; min-height: 100px; display: flex; align-items: center; justify-content: center; }
-        .recognized-text-display { font-size: 1.125rem; margin-top: 1rem; padding: 0.75rem; background-color: #f9fafb; border: 1px solid #d1d5db; border-radius: 0.5rem; min-height: 60px; color: #4b5563; }
-        .feedback-display { font-size: 1.25rem; font-weight: 600; margin-top: 1rem; min-height: 40px; }
-        .feedback-correct { color: #10b981; }
-        .feedback-incorrect { color: #ef4444; }
-        .status-message { margin-top: 1rem; color: #6b7280; min-height: 24px; }
-        .footer-note { margin-top: 2rem; font-size: 0.875rem; color: #6b7280; }
-
-        .teacher-mode-container { border-top: 2px solid #3b82f6; margin-top: 2rem; padding-top: 1.5rem; }
-        .sentence-list-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; margin-bottom: 0.5rem; background-color: #f9fafb; }
-        .sentence-text { flex-grow: 1; text-align: left; margin-right: 1rem; }
-        .sentence-actions button { margin-left: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.875rem; }
-        .add-sentence-form textarea { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.5rem; min-height: 80px; margin-bottom: 0.5rem;}
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
-        .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 0.5rem; }
-        .modal-content textarea { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.5rem; min-height: 100px; margin-bottom: 1rem;}
-        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .close-btn:hover, .close-btn:focus { color: black; text-decoration: none; }
-        .audio-player-container { margin-top: 1rem; }
+        .mode-section {
+            display: none; 
+        }
+        .mode-section.active {
+            display: block; 
+        }
+        .word-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .word-table th, .word-table td {
+            border: 1px solid #e5e7eb; 
+            padding: 0.75rem; 
+            text-align: left;
+        }
+        .word-table th {
+            background-color: #f9fafb; 
+        }
+        .word-table td .custom-checkbox { margin: auto; display: block; }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
-    <div class="w-full max-w-md mx-auto my-4">
-        <button id="toggle-mode-btn" class="btn btn-primary w-full">教師管理モードへ</button>
-    </div>
+<body class="bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100 flex items-center justify-center min-h-screen p-4">
 
-    <div class="container" id="student-mode-container">
-        <h1 class="text-3xl font-bold mb-6 text-center text-blue-600">英語発音練習</h1>
-        <div id="sentence-display" class="sentence-display"></div>
-        <div class="flex flex-wrap justify-center items-center mb-4">
-            <button id="speak-btn" class="btn btn-primary">例文を読み上げる</button>
-            <button id="record-btn" class="btn btn-success">発音を録音する</button>
-            <button id="play-recorded-audio-btn" class="btn btn-info" disabled>自分の発音を再生</button>
-        </div>
-        <div id="status-message" class="status-message"></div>
-        <div class="mt-4">
-            <h2 class="text-xl font-semibold mb-2">あなたが発音した内容 (テキスト):</h2>
-            <div id="recognized-text" class="recognized-text-display"></div>
-        </div>
-        <div id="result-feedback" class="feedback-display"></div>
-        <div class="audio-player-container">
-            <audio id="recorded-audio-player" controls class="w-full hidden"></audio>
-        </div>
-        <div class="mt-6 text-center">
-            <button id="next-btn" class="btn btn-secondary">次の例文へ</button>
-        </div>
-    </div>
+    <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-2xl">
+        <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-800 mb-6 sm:mb-8">英単語学習アプリ</h1>
 
-    <div class="container teacher-mode-container hidden" id="teacher-mode-container">
-        <h1 class="text-3xl font-bold mb-6 text-center text-blue-600">問題文管理</h1>
-        <div class="add-sentence-form mb-6">
-            <h2 class="text-xl font-semibold mb-2 text-left">新しい問題文を追加</h2>
-            <textarea id="new-sentence-text" placeholder="ここに新しい問題文を入力してください..."></textarea>
-            <button id="add-sentence-btn" class="btn btn-success w-full">追加する</button>
+        <div id="loadingIndicator" class="text-center text-gray-500 my-8">
+            <p>データを読み込み中...</p>
         </div>
-        <div>
-            <h2 class="text-xl font-semibold mb-2 text-left">登録済み問題文リスト</h2>
-            <div id="sentence-list" class="space-y-2">
+
+        <div id="mainMenuSection" class="mode-section">
+            <h2 class="text-2xl font-semibold text-center text-gray-700 mb-6">メインメニュー</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button id="goToLearningModeButton" class="btn bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md text-lg">
+                    単語を確認する
+                </button>
+                <button id="goToEditingModeButton" class="btn bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md text-lg">
+                    単語リストを編集
+                </button>
+                <button id="goToMistakesReviewModeButton" class="btn bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md text-lg col-span-1 sm:col-span-2 mt-2">
+                    間違えた単語を確認
+                </button>
+            </div>
+             <button id="openAddWordModalButtonGlobal" class="btn bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md w-full text-lg mt-6">
+                新しい単語を追加
+            </button>
+        </div>
+
+        <div id="learningModeSection" class="mode-section">
+            <button class="backToMenuButton btn bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md mb-4 text-sm">← メニューに戻る</button>
+            <div id="noWordsMessageLearning" class="text-center text-gray-500 my-8 hidden">
+                 <p>まだ単語が登録されていません。「単語リストを編集」または「新しい単語を追加」から単語を追加してください。</p>
+            </div>
+            <div id="wordCardContainerLearning">
+                <div class="card bg-slate-50 p-6 rounded-lg shadow-inner mb-6 relative">
+                    <div>
+                        <div id="wordDisplayLearning" class="word-display text-center"></div>
+                        <div id="meaningDisplayLearning" class="meaning-display meaning-hidden text-center mt-2"></div>
+                    </div>
+                    <div class="mt-4 flex justify-between items-center">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="markAsMistakeCheckboxLearning" class="custom-checkbox mr-2 focus:ring-blue-500">
+                            <label for="markAsMistakeCheckboxLearning" class="text-sm text-gray-700">間違えた</label>
+                        </div>
+                        <button id="deleteWordButtonLearning" class="icon-btn delete-btn" title="この単語を削除">
+                            <svg viewBox="0 0 20 20"><path d="M6 2l2-2h4l2 2h4v2H2V2h4zM3 6h14l-1 14H4L3 6zm5 2v10h1V8H8zm3 0v10h1V8h-1z"></path></svg>
+                        </button>
+                    </div>
                 </div>
-            <p id="no-sentences-message" class="text-gray-500 mt-4 hidden">登録されている問題文はありません。</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <button id="showMeaningButtonLearning" class="btn bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md w-full text-lg">
+                        意味を表示
+                    </button>
+                    <button id="nextWordButtonLearning" class="btn bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md w-full text-lg">
+                        次の単語
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="mistakesReviewModeSection" class="mode-section">
+            <button class="backToMenuButton btn bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md mb-4 text-sm">← メニューに戻る</button>
+            <div id="noWordsMessageMistakes" class="text-center text-gray-500 my-8 hidden">
+                 <p>間違えた単語はありません。素晴らしい！</p>
+            </div>
+            <div id="wordCardContainerMistakes">
+                <div class="card bg-red-50 p-6 rounded-lg shadow-inner mb-6 relative"> <div>
+                        <div id="wordDisplayMistakes" class="word-display text-center text-red-700"></div> <div id="meaningDisplayMistakes" class="meaning-display meaning-hidden text-center mt-2"></div>
+                    </div>
+                    <div class="mt-4 flex justify-between items-center">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="markAsMistakeCheckboxMistakes" class="custom-checkbox mr-2 focus:ring-red-500" checked> <label for="markAsMistakeCheckboxMistakes" class="text-sm text-gray-700">間違えた (チェックを外すとリストから除外)</label>
+                        </div>
+                         <button id="deleteWordButtonMistakes" class="icon-btn delete-btn" title="この単語を完全に削除">
+                            <svg viewBox="0 0 20 20"><path d="M6 2l2-2h4l2 2h4v2H2V2h4zM3 6h14l-1 14H4L3 6zm5 2v10h1V8H8zm3 0v10h1V8h-1z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <button id="showMeaningButtonMistakes" class="btn bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md w-full text-lg">
+                        意味を表示
+                    </button>
+                    <button id="nextWordButtonMistakes" class="btn bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md w-full text-lg">
+                        次の単語
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="editingModeSection" class="mode-section">
+            <button class="backToMenuButton btn bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md mb-4 text-sm">← メニューに戻る</button>
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">登録単語リスト</h2>
+             <div id="noWordsMessageEditing" class="text-center text-gray-500 my-8 hidden">
+                 <p>まだ単語が登録されていません。「新しい単語を追加」ボタンから最初の単語を追加しましょう！</p>
+            </div>
+            <div class="overflow-x-auto shadow-md rounded-lg">
+                <table id="wordListTable" class="word-table">
+                    <thead>
+                        <tr>
+                            <th class="w-1/3">英単語</th>
+                            <th class="w-1/3">意味</th>
+                            <th class="w-1/12 text-center">間違えた</th>
+                            <th class="w-1/6 text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="wordListTableBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="text-center text-sm text-gray-600 mt-6">
+            <span id="wordCounter">単語 0 / 0</span>
+            <p id="userIdDisplay" class="mt-1 text-xs text-gray-400"></p>
         </div>
     </div>
 
-    <div id="edit-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" id="close-edit-modal-btn">&times;</span>
-            <h2 class="text-xl font-semibold mb-4">問題文を編集</h2>
-            <textarea id="edit-sentence-input"></textarea>
-            <button id="save-edit-btn" class="btn btn-primary">保存する</button>
+    <div id="addWordModal" class="modal fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="modal-content bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-md transform scale-95">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">新しい単語を追加</h2>
+            <form id="addWordForm">
+                <div class="mb-4">
+                    <label for="newWordInput" class="block text-sm font-medium text-gray-700 mb-1">英単語</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="newWordInput" name="newWord" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        <button type="button" id="fetchMeaningButton" class="btn bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-3 rounded-lg text-sm">
+                            意味を検索
+                        </button>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <label for="newMeaningInput" class="block text-sm font-medium text-gray-700 mb-1">意味（日本語訳など）</label>
+                    <textarea id="newMeaningInput" name="newMeaning" rows="3" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                </div>
+                <div class="flex justify-end gap-4">
+                    <button type="button" id="closeAddWordModalButton" class="btn bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-lg">
+                        キャンセル
+                    </button>
+                    <button type="submit" class="btn bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">
+                        追加する
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <p class="footer-note">
-        このアプリはブラウザのWeb Speech APIを使用しています。最高の体験を得るには、最新版のGoogle Chromeをご利用ください。マイクの使用許可が必要です。
-    </p>
+    <div id="editWordModal" class="modal fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="modal-content bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-md transform scale-95">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">単語を編集</h2>
+            <form id="editWordForm">
+                <input type="hidden" id="editWordIdInput">
+                <div class="mb-4">
+                    <label for="editWordTextInput" class="block text-sm font-medium text-gray-700 mb-1">英単語</label>
+                    <input type="text" id="editWordTextInput" name="editWordText" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div class="mb-6">
+                    <label for="editMeaningTextInput" class="block text-sm font-medium text-gray-700 mb-1">意味</label>
+                    <textarea id="editMeaningTextInput" name="editMeaningText" rows="3" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                </div>
+                <div class="flex justify-end gap-4">
+                    <button type="button" id="closeEditWordModalButton" class="btn bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-lg">
+                        キャンセル
+                    </button>
+                    <button type="submit" class="btn bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg">
+                        更新する
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-    <script>
-        const defaultSentences = [
-            "Today is a sunny day. I enjoy learning new things. I enjoy learning new things.",
-            "My favorite season is spring. Many flowers bloom in spring. I like to see cherry blossoms.",
-            "I will go to the library tomorrow. I want to borrow some interesting books. Reading books is a good hobby."
-        ];
-        let sentences = [];
 
-        let currentSentenceIndex = 0;
-        let speechRecognition;
-        let synthesis = window.speechSynthesis;
-        let englishVoice = null;
-        let micPermissionGranted = false;
-        let currentMode = 'student';
-        let editingSentenceIndex = -1;
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, Timestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        let mediaRecorder;
-        let audioChunks = [];
-        let recordedAudioBlob = null;
-        let isRecording = false;
+        let allWords = []; // Firestoreから取得した全単語リスト
+        let mistakenWordsList = []; // isMistaken: true の単語リスト
+        
+        let currentLearningWordIndex = 0;
+        let currentMistakeWordIndex = 0;
 
+        let meaningVisibleLearning = false;
+        let meaningVisibleMistakes = false;
+
+        let db, auth, userId;
+        let isAuthReady = false;
+        let wordsUnsubscribe = null;
+        let currentMode = 'menu'; // 'menu', 'learning', 'editing', 'mistakesReview'
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
         // DOM Elements
-        const sentenceDisplay = document.getElementById('sentence-display');
-        const speakButton = document.getElementById('speak-btn');
-        const recordButton = document.getElementById('record-btn');
-        const playRecordedAudioButton = document.getElementById('play-recorded-audio-btn');
-        const recordedAudioPlayer = document.getElementById('recorded-audio-player');
-        const recognizedTextDisplay = document.getElementById('recognized-text');
-        const resultFeedback = document.getElementById('result-feedback');
-        const nextButton = document.getElementById('next-btn');
-        const statusMessage = document.getElementById('status-message');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const mainMenuSection = document.getElementById('mainMenuSection');
+        const learningModeSection = document.getElementById('learningModeSection');
+        const editingModeSection = document.getElementById('editingModeSection');
+        const mistakesReviewModeSection = document.getElementById('mistakesReviewModeSection'); // Added
+        
+        const goToLearningModeButton = document.getElementById('goToLearningModeButton');
+        const goToEditingModeButton = document.getElementById('goToEditingModeButton');
+        const goToMistakesReviewModeButton = document.getElementById('goToMistakesReviewModeButton'); // Added
+        const backToMenuButtons = document.querySelectorAll('.backToMenuButton');
 
-        const toggleModeButton = document.getElementById('toggle-mode-btn');
-        const studentModeContainer = document.getElementById('student-mode-container');
-        const teacherModeContainer = document.getElementById('teacher-mode-container');
-        const newSentenceText = document.getElementById('new-sentence-text');
-        const addSentenceButton = document.getElementById('add-sentence-btn');
-        const sentenceList = document.getElementById('sentence-list');
-        const noSentencesMessage = document.getElementById('no-sentences-message');
+        // Learning Mode Elements (IDs updated for clarity)
+        const wordDisplayLearning = document.getElementById('wordDisplayLearning');
+        const meaningDisplayLearning = document.getElementById('meaningDisplayLearning');
+        const showMeaningButtonLearning = document.getElementById('showMeaningButtonLearning');
+        const nextWordButtonLearning = document.getElementById('nextWordButtonLearning');
+        const markAsMistakeCheckboxLearning = document.getElementById('markAsMistakeCheckboxLearning');
+        const deleteWordButtonLearning = document.getElementById('deleteWordButtonLearning');
+        const noWordsMessageLearning = document.getElementById('noWordsMessageLearning');
+        const wordCardContainerLearning = document.getElementById('wordCardContainerLearning');
 
-        const editModal = document.getElementById('edit-modal');
-        const closeEditModalButton = document.getElementById('close-edit-modal-btn');
-        const editSentenceInput = document.getElementById('edit-sentence-input');
-        const saveEditButton = document.getElementById('save-edit-btn');
+        // Mistakes Review Mode Elements (New)
+        const wordDisplayMistakes = document.getElementById('wordDisplayMistakes');
+        const meaningDisplayMistakes = document.getElementById('meaningDisplayMistakes');
+        const showMeaningButtonMistakes = document.getElementById('showMeaningButtonMistakes');
+        const nextWordButtonMistakes = document.getElementById('nextWordButtonMistakes');
+        const markAsMistakeCheckboxMistakes = document.getElementById('markAsMistakeCheckboxMistakes');
+        const deleteWordButtonMistakes = document.getElementById('deleteWordButtonMistakes');
+        const noWordsMessageMistakes = document.getElementById('noWordsMessageMistakes');
+        const wordCardContainerMistakes = document.getElementById('wordCardContainerMistakes');
 
-        function loadSentencesFromStorage() {
-            const storedSentences = localStorage.getItem('pronunciationAppSentences');
-            if (storedSentences) {
-                sentences = JSON.parse(storedSentences);
-            } else {
-                sentences = [...defaultSentences];
-                saveSentencesToStorage();
-            }
-            if (sentences.length === 0) {
-                sentences = [...defaultSentences];
-                saveSentencesToStorage();
-            }
-        }
 
-        function saveSentencesToStorage() {
-            localStorage.setItem('pronunciationAppSentences', JSON.stringify(sentences));
-        }
+        const wordListTableBody = document.getElementById('wordListTableBody');
+        const noWordsMessageEditing = document.getElementById('noWordsMessageEditing');
 
-        function toggleMode() {
-            if (currentMode === 'student') {
-                currentMode = 'teacher';
-                toggleModeButton.textContent = '学習者モードへ';
-                studentModeContainer.classList.add('hidden');
-                teacherModeContainer.classList.remove('hidden');
-                renderSentenceList();
-            } else {
-                currentMode = 'student';
-                toggleModeButton.textContent = '教師管理モードへ';
-                studentModeContainer.classList.remove('hidden');
-                teacherModeContainer.classList.add('hidden');
-                loadSentencesFromStorage();
-                currentSentenceIndex = 0;
-                displaySentence();
-            }
-        }
-        toggleModeButton.addEventListener('click', toggleMode);
+        const wordCounter = document.getElementById('wordCounter');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+        
+        const openAddWordModalButtonGlobal = document.getElementById('openAddWordModalButtonGlobal');
+        const addWordModal = document.getElementById('addWordModal');
+        const addWordForm = document.getElementById('addWordForm');
+        const newWordInput = document.getElementById('newWordInput');
+        const newMeaningInput = document.getElementById('newMeaningInput');
+        const closeAddWordModalButton = document.getElementById('closeAddWordModalButton');
+        const fetchMeaningButton = document.getElementById('fetchMeaningButton'); 
 
-        function renderSentenceList() {
-            sentenceList.innerHTML = '';
-            if (sentences.length === 0) {
-                noSentencesMessage.classList.remove('hidden');
+        const editWordModal = document.getElementById('editWordModal');
+        const editWordForm = document.getElementById('editWordForm');
+        const editWordIdInput = document.getElementById('editWordIdInput');
+        const editWordTextInput = document.getElementById('editWordTextInput');
+        const editMeaningTextInput = document.getElementById('editMeaningTextInput');
+        const closeEditWordModalButton = document.getElementById('closeEditWordModalButton');
+
+
+        async function initializeFirebase() {
+            if (!firebaseConfig) {
+                console.error("Firebase config is not available.");
+                loadingIndicator.textContent = "Firebaseの設定がありません。";
+                switchMode('menu'); 
                 return;
             }
-            noSentencesMessage.classList.add('hidden');
-            sentences.forEach((sentence, index) => {
-                const listItem = document.createElement('div');
-                listItem.className = 'sentence-list-item';
-                const textSpan = document.createElement('span');
-                textSpan.className = 'sentence-text';
-                textSpan.textContent = sentence.length > 50 ? sentence.substring(0, 50) + '...' : sentence;
-                const actionsDiv = document.createElement('div');
-                actionsDiv.className = 'sentence-actions';
-                const editBtn = document.createElement('button');
-                editBtn.className = 'btn btn-warning';
-                editBtn.textContent = '編集';
-                editBtn.onclick = () => openEditModal(index);
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'btn btn-danger';
-                deleteBtn.textContent = '削除';
-                deleteBtn.onclick = () => deleteSentence(index);
-                actionsDiv.appendChild(editBtn);
-                actionsDiv.appendChild(deleteBtn);
-                listItem.appendChild(textSpan);
-                listItem.appendChild(actionsDiv);
-                sentenceList.appendChild(listItem);
-            });
-        }
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('debug');
 
-        function addSentence() {
-            const text = newSentenceText.value.trim();
-            if (text) {
-                sentences.push(text);
-                saveSentencesToStorage();
-                renderSentenceList();
-                newSentenceText.value = '';
-                alert('問題文が追加されました。');
-            } else {
-                alert('問題文を入力してください。');
-            }
-        }
-        addSentenceButton.addEventListener('click', addSentence);
-
-        function deleteSentence(index) {
-            if (confirm(`「${sentences[index].substring(0,20)}...」を削除してもよろしいですか？`)) {
-                sentences.splice(index, 1);
-                saveSentencesToStorage();
-                renderSentenceList();
-                alert('問題文が削除されました。');
-            }
-        }
-
-        function openEditModal(index) {
-            editingSentenceIndex = index;
-            editSentenceInput.value = sentences[index];
-            editModal.style.display = 'block';
-        }
-
-        function closeEditModal() {
-            editModal.style.display = 'none';
-            editingSentenceIndex = -1;
-        }
-        closeEditModalButton.addEventListener('click', closeEditModal);
-        window.addEventListener('click', (event) => {
-            if (event.target == editModal) {
-                closeEditModal();
-            }
-        });
-
-        function saveEditedSentence() {
-            const newText = editSentenceInput.value.trim();
-            if (newText && editingSentenceIndex > -1) {
-                sentences[editingSentenceIndex] = newText;
-                saveSentencesToStorage();
-                renderSentenceList();
-                closeEditModal();
-                alert('問題文が更新されました。');
-            } else if (!newText) {
-                 alert('問題文を入力してください。');
-            }
-        }
-        saveEditButton.addEventListener('click', saveEditedSentence);
-
-        // --- Student Mode (Pronunciation App) Functions ---
-        if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            speechRecognition = new SpeechRecognition();
-            speechRecognition.continuous = false;
-            speechRecognition.lang = 'en-US';
-            speechRecognition.interimResults = false;
-            speechRecognition.maxAlternatives = 1;
-
-            speechRecognition.onresult = (event) => {
-                const recognized = event.results[0][0].transcript;
-                recognizedTextDisplay.textContent = recognized;
-                // statusMessage.textContent = "認識完了"; // 録音停止時に更新するのでここでは不要かも
-                comparePronunciation(sentences[currentSentenceIndex], recognized);
-            };
-
-            speechRecognition.onerror = (event) => {
-                console.error("Speech recognition error:", event.error, event.message);
-                let errorMessage = "音声認識エラーが発生しました。";
-                if (event.error === 'no-speech') errorMessage = "音声が検出されませんでした。";
-                else if (event.error === 'audio-capture') errorMessage = "マイクへのアクセスに問題があります。";
-                else if (event.error === 'not-allowed') {
-                    errorMessage = "マイクの使用が許可されていません。";
-                    micPermissionGranted = false;
-                    if (isRecording) stopAudioRecording(); // 強制停止
-                }
-                else if (event.error === 'network') errorMessage = "ネットワークエラーが発生しました。";
-                else errorMessage = `予期せぬエラー: ${event.error}`;
-                
-                statusMessage.textContent = errorMessage;
-                recognizedTextDisplay.textContent = "";
-                resultFeedback.textContent = "";
-                if (isRecording) stopAudioRecording(); // エラー時も録音停止
-                recordButton.textContent = "発音を録音する";
-                recordButton.disabled = false;
-            };
-
-            speechRecognition.onstart = () => {
-                // statusMessage.textContent = "マイクで話してください..."; // 録音開始時に更新
-                recognizedTextDisplay.textContent = "";
-                resultFeedback.textContent = "";
-            };
-            
-            speechRecognition.onend = () => {
-                // This event fires when recognition service has disconnected.
-                // May not need to do much here if stopAudioRecording handles UI updates.
-                if (isRecording) { // 予期せず終了した場合
-                    stopAudioRecording();
-                }
-            };
-        } else {
-            statusMessage.textContent = "お使いのブラウザは音声認識をサポートしていません。";
-            if(speakButton) speakButton.disabled = true;
-            if(recordButton) recordButton.disabled = true;
-            if(nextButton) nextButton.disabled = true;
-            if(playRecordedAudioButton) playRecordedAudioButton.disabled = true;
-        }
-        
-        if ('speechSynthesis' in window) {
-            synthesis.onvoiceschanged = () => {
-                const voices = synthesis.getVoices();
-                englishVoice = voices.find(voice => voice.lang.startsWith('en-') && voice.name.includes('Google US English')) ||
-                               voices.find(voice => voice.lang.startsWith('en-') && voice.default) ||
-                               voices.find(voice => voice.lang.startsWith('en-'));
-                if (!englishVoice) console.warn("英語の音声が見つかりませんでした。");
-                displaySentence(); 
-            };
-            if (synthesis.getVoices().length > 0) {
-                 synthesis.onvoiceschanged();
-            }
-        } else {
-            statusMessage.textContent = "お使いのブラウザは音声合成をサポートしていません。";
-            if(speakButton) speakButton.disabled = true;
-            displaySentence();
-        }
-
-        function displaySentence() {
-            if (sentences && sentences.length > 0) {
-                sentenceDisplay.textContent = sentences[currentSentenceIndex];
-                nextButton.disabled = sentences.length <= 1;
-            } else {
-                sentenceDisplay.textContent = "練習用の問題文がありません。教師管理モードで追加してください。";
-                nextButton.disabled = true; 
-            }
-            recognizedTextDisplay.textContent = "";
-            resultFeedback.textContent = "";
-            playRecordedAudioButton.disabled = true; // 新しい問題になったら再生ボタンを無効化
-            recordedAudioPlayer.classList.add('hidden'); // プレーヤーも隠す
-            recordedAudioPlayer.src = ''; // ソースもクリア
-            if (statusMessage) statusMessage.textContent = "準備完了";
-        }
-
-        function speakSentence() {
-            if (!synthesis || !('speak' in synthesis) || !sentences || sentences.length === 0) { 
-                statusMessage.textContent = "音声合成が利用できません、または例文がありません。";
-                return;
-            }
-            if (synthesis.speaking) synthesis.cancel();
-
-            const utterance = new SpeechSynthesisUtterance(sentences[currentSentenceIndex]);
-            if (englishVoice) utterance.voice = englishVoice;
-            utterance.lang = 'en-US';
-            utterance.pitch = 1;
-            utterance.rate = 0.9; 
-            
-            utterance.onstart = () => {
-                statusMessage.textContent = "例文を読み上げています...";
-                speakButton.disabled = true;
-                recordButton.disabled = true;
-                playRecordedAudioButton.disabled = true;
-            };
-            utterance.onend = () => {
-                statusMessage.textContent = "読み上げ完了";
-                speakButton.disabled = false;
-                if (micPermissionGranted || speechRecognition) recordButton.disabled = false;
-                // 録音済み音声があれば再生ボタンを有効にするかは状況による (ここでは読み上げ後は一旦そのまま)
-            };
-            utterance.onerror = (event) => {
-                console.error("Speech synthesis error:", event.error);
-                statusMessage.textContent = "読み上げエラーが発生しました。";
-                speakButton.disabled = false;
-                if (micPermissionGranted || speechRecognition) recordButton.disabled = false;
-            };
-            synthesis.speak(utterance);
-        }
-        
-        async function handleRecordButtonClick() {
-            if (!speechRecognition || !sentences || sentences.length === 0) {
-                statusMessage.textContent = "音声認識が利用できません、または例文がありません。";
-                return;
-            }
-
-            if (isRecording) {
-                stopAudioRecording();
-            } else {
-                await startAudioRecording();
-            }
-        }
-        
-        async function startAudioRecording() {
-            if (!micPermissionGranted) {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    micPermissionGranted = true;
-                    // MediaRecorderのセットアップはストリーム取得後に行う
-                    setupMediaRecorder(stream);
-                     // ストリームはMediaRecorderが使うので、ここでは閉じない
-                } catch (err) {
-                    console.error("Error requesting microphone permission:", err);
-                    micPermissionGranted = false;
-                    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                        statusMessage.textContent = "マイクの使用が許可されませんでした。";
-                    } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-                        statusMessage.textContent = "使用可能なマイクが見つかりませんでした。";
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        userIdDisplay.textContent = `UserID: ${userId}`;
+                        isAuthReady = true;
+                        await setupWordListener();
                     } else {
-                        statusMessage.textContent = "マイクへのアクセス中にエラーが発生しました。";
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
                     }
-                    return; // マイク許可がない場合はここで終了
+                });
+            } catch (error) {
+                console.error("Firebase initialization error:", error);
+                loadingIndicator.textContent = "Firebaseの初期化に失敗しました。";
+                switchMode('menu');
+            }
+        }
+
+        function switchMode(mode) {
+            currentMode = mode; 
+
+            mainMenuSection.classList.toggle('active', mode === 'menu');
+            learningModeSection.classList.toggle('active', mode === 'learning');
+            editingModeSection.classList.toggle('active', mode === 'editing');
+            mistakesReviewModeSection.classList.toggle('active', mode === 'mistakesReview'); // Added
+            
+            loadingIndicator.classList.add('hidden');
+
+            if (mode === 'learning') {
+                if (allWords.length > 0) {
+                    noWordsMessageLearning.classList.add('hidden');
+                    wordCardContainerLearning.classList.remove('hidden');
+                    displayWordInLearningMode(); 
+                } else {
+                    noWordsMessageLearning.classList.remove('hidden');
+                    wordCardContainerLearning.classList.add('hidden');
                 }
-            } else {
-                 // 既に許可がある場合は、再度ストリームを取得してMediaRecorderをセットアップ
-                 // (以前のストリームが閉じられている可能性があるため)
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    setupMediaRecorder(stream);
-                } catch (err) {
-                    console.error("Error re-getting microphone stream:", err);
-                    statusMessage.textContent = "マイクの再取得に失敗しました。";
-                    return;
+            } else if (mode === 'editing') {
+                renderWordListForEditing(); 
+            } else if (mode === 'mistakesReview') { // Added
+                mistakenWordsList = allWords.filter(word => word.isMistaken);
+                currentMistakeWordIndex = 0; // Reset index for this mode
+                if (mistakenWordsList.length > 0) {
+                    noWordsMessageMistakes.classList.add('hidden');
+                    wordCardContainerMistakes.classList.remove('hidden');
+                    displayWordInMistakesReviewMode();
+                } else {
+                    noWordsMessageMistakes.classList.remove('hidden');
+                    wordCardContainerMistakes.classList.add('hidden');
                 }
             }
+            updateWordCounter(); 
+        }
 
-            if (!mediaRecorder) { // setupMediaRecorderが失敗した場合
-                statusMessage.textContent = "録音機能の初期化に失敗しました。";
+        async function setupWordListener() {
+            if (!isAuthReady || !userId) {
+                console.warn("認証が準備できていないため、単語リスナーを設定できません。メニューにフォールバックします。");
+                switchMode('menu');
+                goToLearningModeButton.disabled = true;
+                goToEditingModeButton.disabled = true;
+                goToMistakesReviewModeButton.disabled = true;
+                openAddWordModalButtonGlobal.disabled = true;
                 return;
             }
 
-            audioChunks = [];
-            recordedAudioBlob = null;
-            playRecordedAudioButton.disabled = true;
-            recordedAudioPlayer.classList.add('hidden');
-            recordedAudioPlayer.src = '';
+            goToLearningModeButton.disabled = false;
+            goToEditingModeButton.disabled = false;
+            goToMistakesReviewModeButton.disabled = false;
+            openAddWordModalButtonGlobal.disabled = false;
 
-            try {
-                mediaRecorder.start();
-                speechRecognition.start(); // 音声認識も開始
-                isRecording = true;
-                recordButton.textContent = "録音停止";
-                recordButton.classList.remove('btn-success');
-                recordButton.classList.add('btn-danger');
-                statusMessage.textContent = "録音中... マイクで話してください。";
-                speakButton.disabled = true; // 録音中は例文読み上げを無効化
-                nextButton.disabled = true; // 録音中は次へボタンを無効化
-            } catch (e) {
-                console.error("Error starting recording:", e);
-                statusMessage.textContent = "録音開始に失敗しました。";
-                isRecording = false; // 状態をリセット
-                recordButton.textContent = "発音を録音する";
-                recordButton.classList.remove('btn-danger');
-                recordButton.classList.add('btn-success');
-                speakButton.disabled = false;
-                nextButton.disabled = sentences.length <= 1;
+            if (wordsUnsubscribe) wordsUnsubscribe(); 
 
-            }
-        }
+            const wordsCollectionPath = `/artifacts/${appId}/users/${userId}/words`;
+            const q = query(collection(db, wordsCollectionPath)); 
 
-        function setupMediaRecorder(stream) {
-            try {
-                mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.ondataavailable = event => {
-                    audioChunks.push(event.data);
-                };
-                mediaRecorder.onstop = () => {
-                    recordedAudioBlob = new Blob(audioChunks, { type: 'audio/webm' }); // または 'audio/ogg; codecs=opus' など
-                    const audioUrl = URL.createObjectURL(recordedAudioBlob);
-                    recordedAudioPlayer.src = audioUrl;
-                    playRecordedAudioButton.disabled = false;
-                    // recordedAudioPlayer.classList.remove('hidden'); // 自動再生しないので、ここでは表示しない
-                     // MediaRecorderが使っていたストリームのトラックを停止
-                    stream.getTracks().forEach(track => track.stop());
-                };
-                 mediaRecorder.onerror = (event) => {
-                    console.error("MediaRecorder error:", event.error);
-                    statusMessage.textContent = "録音中にエラーが発生しました。";
-                    if (isRecording) stopAudioRecording(); // エラー発生時も録音停止処理を試みる
-                };
-            } catch (e) {
-                console.error("Error setting up MediaRecorder:", e);
-                statusMessage.textContent = "録音機能のセットアップに失敗しました。ブラウザが対応していない可能性があります。";
-                mediaRecorder = null; // エラー時はnullに設定
-            }
-        }
-
-
-        function stopAudioRecording() {
-            if (mediaRecorder && mediaRecorder.state !== "inactive") {
-                mediaRecorder.stop();
-            }
-            if (speechRecognition && isRecording) { // isRecording で speechRecognition.stop の多重呼び出しを避ける
-                try {
-                    speechRecognition.stop(); // 音声認識も停止
-                } catch (e) {
-                    console.warn("Error stopping speech recognition:", e);
+            wordsUnsubscribe = onSnapshot(q, (querySnapshot) => {
+                allWords = [];
+                querySnapshot.forEach((doc) => {
+                    allWords.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Reset learning index if out of bounds
+                if (currentLearningWordIndex >= allWords.length) {
+                    currentLearningWordIndex = Math.max(0, allWords.length - 1);
                 }
-            }
-            isRecording = false;
-            recordButton.textContent = "発音を録音する";
-            recordButton.classList.remove('btn-danger');
-            recordButton.classList.add('btn-success');
-            recordButton.disabled = false; // 停止後は再度録音可能に
-            statusMessage.textContent = "録音完了。認識結果を確認してください。";
-            speakButton.disabled = false; // 例文読み上げを有効化
-            nextButton.disabled = sentences.length <= 1; // 次へボタンを有効化
-        }
-        
-        playRecordedAudioButton.addEventListener('click', () => {
-            if (recordedAudioPlayer.src && recordedAudioBlob) {
-                recordedAudioPlayer.classList.remove('hidden'); // 再生時に表示
-                recordedAudioPlayer.play();
-            } else {
-                statusMessage.textContent = "再生する録音データがありません。";
-            }
-        });
+
+                // Update mistaken words list for mistakes review mode
+                mistakenWordsList = allWords.filter(word => word.isMistaken);
+                if (currentMistakeWordIndex >= mistakenWordsList.length) {
+                     currentMistakeWordIndex = Math.max(0, mistakenWordsList.length -1);
+                }
 
 
-        function comparePronunciation(original, recognized) {
-            const normalize = (text) => text.toLowerCase().replace(/[.,?!']/g, "").trim();
-            const normalizedOriginal = normalize(original);
-            const normalizedRecognized = normalize(recognized);
+                if (!loadingIndicator.classList.contains('hidden')) { // Initial load
+                    switchMode('menu'); 
+                } else { // Subsequent updates, refresh current view
+                    if (currentMode === 'learning' && learningModeSection.classList.contains('active')) {
+                        if (allWords.length > 0) {
+                            noWordsMessageLearning.classList.add('hidden');
+                            wordCardContainerLearning.classList.remove('hidden');
+                            displayWordInLearningMode();
+                        } else {
+                            noWordsMessageLearning.classList.remove('hidden');
+                            wordCardContainerLearning.classList.add('hidden');
+                        }
+                    } else if (currentMode === 'editing' && editingModeSection.classList.contains('active')) {
+                        renderWordListForEditing();
+                    } else if (currentMode === 'mistakesReview' && mistakesReviewModeSection.classList.contains('active')) {
+                         // Re-filter and display for mistakes review mode
+                        mistakenWordsList = allWords.filter(word => word.isMistaken); // Ensure list is fresh
+                        if (currentMistakeWordIndex >= mistakenWordsList.length) { // Adjust index if current word was unmarked
+                           currentMistakeWordIndex = Math.max(0, mistakenWordsList.length -1);
+                        }
+                        if (mistakenWordsList.length > 0) {
+                            noWordsMessageMistakes.classList.add('hidden');
+                            wordCardContainerMistakes.classList.remove('hidden');
+                            displayWordInMistakesReviewMode();
+                        } else {
+                            noWordsMessageMistakes.classList.remove('hidden');
+                            wordCardContainerMistakes.classList.add('hidden');
+                        }
+                    }
+                }
+                updateWordCounter();
 
-            if (normalizedOriginal === normalizedRecognized) {
-                resultFeedback.textContent = "素晴らしい！正確です！";
-                resultFeedback.className = "feedback-display feedback-correct";
-            } else {
-                resultFeedback.textContent = "惜しい！もう一度試してみましょう。";
-                resultFeedback.className = "feedback-display feedback-incorrect";
-            }
-        }
-
-        if(speakButton) speakButton.addEventListener('click', speakSentence);
-        if(recordButton) recordButton.addEventListener('click', handleRecordButtonClick); 
-
-        if(nextButton) {
-            nextButton.addEventListener('click', () => {
-                if (!sentences || sentences.length <= 1) return; 
-                currentSentenceIndex = (currentSentenceIndex + 1) % sentences.length;
-                displaySentence(); // これにより再生ボタンなどがリセットされる
-                if (synthesis && synthesis.speaking) synthesis.cancel();
-                if (isRecording) stopAudioRecording(); // 次の問題に行く前に録音を停止
-
-                speakButton.disabled = false; // 念のため
-                recordButton.disabled = false; // 念のため
+            }, (error) => {
+                console.error("単語の購読中にエラーが発生しました: ", error);
+                loadingIndicator.textContent = "単語の読み込みに失敗しました。";
+                if (currentMode !== 'menu' || !mainMenuSection.classList.contains('active')) {
+                     switchMode('menu');
+                }
+                goToLearningModeButton.disabled = true;
+                goToEditingModeButton.disabled = true;
+                goToMistakesReviewModeButton.disabled = true;
             });
         }
 
-        loadSentencesFromStorage();
-        if (synthesis && typeof synthesis.onvoiceschanged !== 'undefined' && synthesis.getVoices().length === 0) {
-             setTimeout(() => {
-                if(sentenceDisplay && sentenceDisplay.textContent === "" && (!synthesis || !synthesis.speaking)) { 
-                    displaySentence();
-                }
-            }, 1000); 
-        } else if (!synthesis || typeof synthesis.onvoiceschanged === 'undefined') {
-            displaySentence();
+        async function addWordToFirestore(word, meaning) {
+            if (!isAuthReady || !userId) {
+                alert("ログイン状態を確認してください。");
+                return;
+            }
+            try {
+                const wordsCollectionPath = `/artifacts/${appId}/users/${userId}/words`;
+                await addDoc(collection(db, wordsCollectionPath), {
+                    word: word,
+                    meaning: meaning,
+                    isMistaken: false,
+                    createdAt: Timestamp.now()
+                });
+            } catch (error) {
+                console.error("Error adding word: ", error);
+                alert("単語の追加中にエラーが発生しました。");
+            }
         }
+
+        async function updateWordInFirestore(wordId, newWord, newMeaning) {
+            if (!isAuthReady || !userId) return;
+            try {
+                const wordDocRef = doc(db, `/artifacts/${appId}/users/${userId}/words`, wordId);
+                await updateDoc(wordDocRef, {
+                    word: newWord,
+                    meaning: newMeaning
+                });
+            } catch (error) {
+                console.error("Error updating word: ", error);
+                alert("単語の更新中にエラーが発生しました。");
+            }
+        }
+        
+        async function updateWordMistakeStatus(wordId, isMistaken) {
+            if (!isAuthReady || !userId) return;
+            try {
+                const wordDocRef = doc(db, `/artifacts/${appId}/users/${userId}/words`, wordId);
+                await updateDoc(wordDocRef, { isMistaken: isMistaken });
+                // onSnapshot will refresh the views
+            } catch (error) {
+                console.error("Error updating mistake status: ", error);
+                alert("「間違えた」状態の更新中にエラーが発生しました。");
+            }
+        }
+
+        async function deleteWordFromFirestore(wordId) {
+            if (!isAuthReady || !userId) return;
+            const currentWordObject = allWords.find(w => w.id === wordId);
+            const wordText = currentWordObject ? currentWordObject.word : "選択された単語";
+
+            if (window.confirm(`単語 "${wordText}" を本当に削除しますか？`)) {
+                try {
+                    const wordDocRef = doc(db, `/artifacts/${appId}/users/${userId}/words`, wordId);
+                    await deleteDoc(wordDocRef);
+                } catch (error) {
+                    console.error("Error deleting word: ", error);
+                    alert("単語の削除中にエラーが発生しました。");
+                }
+            }
+        }
+
+        // --- Learning Mode Specific Functions ---
+        function displayWordInLearningMode() {
+            if (allWords.length === 0) {
+                wordDisplayLearning.textContent = "";
+                meaningDisplayLearning.textContent = "";
+                markAsMistakeCheckboxLearning.checked = false;
+                noWordsMessageLearning.classList.remove('hidden');
+                wordCardContainerLearning.classList.add('hidden');
+                return;
+            }
+            
+            noWordsMessageLearning.classList.add('hidden');
+            wordCardContainerLearning.classList.remove('hidden');
+
+            const currentWord = allWords[currentLearningWordIndex];
+            wordDisplayLearning.textContent = currentWord.word;
+            meaningDisplayLearning.textContent = currentWord.meaning;
+            markAsMistakeCheckboxLearning.checked = currentWord.isMistaken || false;
+
+            meaningDisplayLearning.classList.toggle('meaning-hidden', !meaningVisibleLearning);
+            showMeaningButtonLearning.textContent = meaningVisibleLearning ? "意味を隠す" : "意味を表示";
+        }
+
+        function toggleMeaningLearningMode() {
+            if (allWords.length === 0) return;
+            meaningVisibleLearning = !meaningVisibleLearning;
+            displayWordInLearningMode();
+        }
+
+        function showNextWordLearningMode() {
+            if (allWords.length === 0) return;
+            currentLearningWordIndex = (currentLearningWordIndex + 1) % allWords.length;
+            meaningVisibleLearning = false;
+            displayWordInLearningMode();
+        }
+
+        // --- Mistakes Review Mode Specific Functions ---
+        function displayWordInMistakesReviewMode() {
+            if (mistakenWordsList.length === 0) {
+                wordDisplayMistakes.textContent = "";
+                meaningDisplayMistakes.textContent = "";
+                markAsMistakeCheckboxMistakes.checked = false; // Should be true if a word is shown
+                noWordsMessageMistakes.classList.remove('hidden');
+                wordCardContainerMistakes.classList.add('hidden');
+                return;
+            }
+
+            noWordsMessageMistakes.classList.add('hidden');
+            wordCardContainerMistakes.classList.remove('hidden');
+            
+            const currentWord = mistakenWordsList[currentMistakeWordIndex];
+            wordDisplayMistakes.textContent = currentWord.word;
+            meaningDisplayMistakes.textContent = currentWord.meaning;
+            // This checkbox should always be checked if a word is in this list.
+            // Unchecking it will trigger an update and onSnapshot will remove it from mistakenWordsList.
+            markAsMistakeCheckboxMistakes.checked = currentWord.isMistaken; 
+
+            meaningDisplayMistakes.classList.toggle('meaning-hidden', !meaningVisibleMistakes);
+            showMeaningButtonMistakes.textContent = meaningVisibleMistakes ? "意味を隠す" : "意味を表示";
+        }
+
+        function toggleMeaningMistakesMode() {
+            if (mistakenWordsList.length === 0) return;
+            meaningVisibleMistakes = !meaningVisibleMistakes;
+            displayWordInMistakesReviewMode();
+        }
+
+        function showNextWordMistakesMode() {
+            if (mistakenWordsList.length === 0) return;
+            currentMistakeWordIndex = (currentMistakeWordIndex + 1) % mistakenWordsList.length;
+            meaningVisibleMistakes = false;
+            displayWordInMistakesReviewMode();
+        }
+
+
+        function renderWordListForEditing() {
+            wordListTableBody.innerHTML = ''; 
+            if (allWords.length === 0) {
+                noWordsMessageEditing.classList.remove('hidden');
+                wordListTableBody.closest('table').classList.add('hidden'); 
+                return;
+            }
+            
+            noWordsMessageEditing.classList.add('hidden');
+            wordListTableBody.closest('table').classList.remove('hidden');
+
+            allWords.forEach(word => {
+                const row = wordListTableBody.insertRow();
+                row.insertCell().textContent = word.word;
+                row.insertCell().textContent = word.meaning;
+                
+                const mistakeCell = row.insertCell();
+                const mistakeCheckbox = document.createElement('input');
+                mistakeCheckbox.type = 'checkbox';
+                mistakeCheckbox.checked = word.isMistaken || false;
+                mistakeCheckbox.classList.add('custom-checkbox');
+                mistakeCheckbox.addEventListener('change', () => updateWordMistakeStatus(word.id, mistakeCheckbox.checked));
+                mistakeCell.appendChild(mistakeCheckbox);
+                mistakeCell.classList.add('text-center');
+
+                const actionsCell = row.insertCell();
+                actionsCell.classList.add('text-center', 'space-x-2');
+                
+                const editButton = document.createElement('button');
+                editButton.innerHTML = `<svg viewBox="0 0 20 20"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828zM2 18V6c0-1.1.9-2 2-2h4v2H4v10h10v-4h2v4c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2z"></path></svg>`;
+                editButton.classList.add('icon-btn', 'edit-btn');
+                editButton.title = "編集";
+                editButton.addEventListener('click', () => openEditWordModal(word));
+                actionsCell.appendChild(editButton);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.innerHTML = `<svg viewBox="0 0 20 20"><path d="M6 2l2-2h4l2 2h4v2H2V2h4zM3 6h14l-1 14H4L3 6zm5 2v10h1V8H8zm3 0v10h1V8h-1z"></path></svg>`;
+                deleteButton.classList.add('icon-btn', 'delete-btn');
+                deleteButton.title = "削除";
+                deleteButton.addEventListener('click', () => deleteWordFromFirestore(word.id));
+                actionsCell.appendChild(deleteButton);
+            });
+        }
+
+        function openModal(modalElement) {
+            modalElement.classList.remove('hidden');
+            setTimeout(() => {
+                modalElement.classList.remove('opacity-0');
+                modalElement.querySelector('.modal-content').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeModal(modalElement) {
+            modalElement.classList.add('opacity-0');
+            modalElement.querySelector('.modal-content').classList.add('scale-95');
+            setTimeout(() => {
+                modalElement.classList.add('hidden');
+            }, 250);
+        }
+
+        function openAddWordModal() {
+            addWordForm.reset();
+            openModal(addWordModal);
+            newWordInput.focus();
+        }
+
+        function openEditWordModal(word) {
+            editWordForm.reset();
+            editWordIdInput.value = word.id;
+            editWordTextInput.value = word.word;
+            editMeaningTextInput.value = word.meaning;
+            openModal(editWordModal);
+            editWordTextInput.focus();
+        }
+        
+        function updateWordCounter() {
+            if (currentMode === 'learning') {
+                 wordCounter.textContent = `単語 ${allWords.length > 0 ? currentLearningWordIndex + 1 : 0} / ${allWords.length}`;
+            } else if (currentMode === 'mistakesReview') {
+                 wordCounter.textContent = `間違えた単語 ${mistakenWordsList.length > 0 ? currentMistakeWordIndex + 1 : 0} / ${mistakenWordsList.length}`;
+            } else { // 'menu' or 'editing'
+                 wordCounter.textContent = `総単語数: ${allWords.length}`;
+            }
+        }
+
+        async function fetchMeaningFromGemini(wordToTranslate) {
+            const originalButtonText = fetchMeaningButton.textContent;
+            fetchMeaningButton.textContent = "検索中...";
+            fetchMeaningButton.disabled = true;
+
+            const prompt = `Translate the English word "${wordToTranslate}" into Japanese. Provide only the Japanese meaning. If multiple meanings exist, provide the most common one or a few separated by commas.`;
+            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+            const payload = { contents: chatHistory };
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("Gemini API error:", errorData);
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const translatedText = result.candidates[0].content.parts[0].text;
+                    newMeaningInput.value = translatedText.trim();
+                } else {
+                    console.warn("Gemini API response structure unexpected or content missing:", result);
+                    alert("意味の取得に失敗しました。レスポンス形式が不正です。");
+                    newMeaningInput.value = ""; 
+                }
+            } catch (error) {
+                console.error("Error fetching meaning from Gemini:", error);
+                alert(`意味の取得中にエラーが発生しました: ${error.message}`);
+                newMeaningInput.value = ""; 
+            } finally {
+                fetchMeaningButton.textContent = originalButtonText;
+                fetchMeaningButton.disabled = false;
+            }
+        }
+
+
+        // --- Event Listeners ---
+        goToLearningModeButton.addEventListener('click', () => switchMode('learning'));
+        goToEditingModeButton.addEventListener('click', () => switchMode('editing'));
+        goToMistakesReviewModeButton.addEventListener('click', () => switchMode('mistakesReview')); // Added
+        backToMenuButtons.forEach(btn => btn.addEventListener('click', () => switchMode('menu')));
+
+        // Learning Mode Listeners
+        showMeaningButtonLearning.addEventListener('click', toggleMeaningLearningMode);
+        nextWordButtonLearning.addEventListener('click', showNextWordLearningMode);
+        markAsMistakeCheckboxLearning.addEventListener('change', (event) => {
+            if (allWords.length === 0) return;
+            updateWordMistakeStatus(allWords[currentLearningWordIndex].id, event.target.checked);
+        });
+        deleteWordButtonLearning.addEventListener('click', () => {
+            if (allWords.length === 0) return;
+            deleteWordFromFirestore(allWords[currentLearningWordIndex].id);
+        });
+
+        // Mistakes Review Mode Listeners
+        showMeaningButtonMistakes.addEventListener('click', toggleMeaningMistakesMode);
+        nextWordButtonMistakes.addEventListener('click', showNextWordMistakesMode);
+        markAsMistakeCheckboxMistakes.addEventListener('change', (event) => {
+            if (mistakenWordsList.length === 0) return;
+            // Update the original word in allWords array via its ID
+            updateWordMistakeStatus(mistakenWordsList[currentMistakeWordIndex].id, event.target.checked);
+        });
+        deleteWordButtonMistakes.addEventListener('click', () => {
+            if (mistakenWordsList.length === 0) return;
+            deleteWordFromFirestore(mistakenWordsList[currentMistakeWordIndex].id);
+        });
+
+
+        openAddWordModalButtonGlobal.addEventListener('click', openAddWordModal);
+        closeAddWordModalButton.addEventListener('click', () => closeModal(addWordModal));
+        addWordModal.addEventListener('click', (e) => e.target === addWordModal && closeModal(addWordModal));
+        addWordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newWord = newWordInput.value.trim();
+            const newMeaning = newMeaningInput.value.trim();
+            if (newWord && newMeaning) {
+                await addWordToFirestore(newWord, newMeaning);
+                closeModal(addWordModal);
+            } else {
+                alert("単語と意味の両方を入力してください。");
+            }
+        });
+        
+        fetchMeaningButton.addEventListener('click', () => { 
+            const wordToFetch = newWordInput.value.trim();
+            if (wordToFetch) {
+                fetchMeaningFromGemini(wordToFetch);
+            } else {
+                alert("意味を検索する英単語を入力してください。");
+            }
+        });
+
+        closeEditWordModalButton.addEventListener('click', () => closeModal(editWordModal));
+        editWordModal.addEventListener('click', (e) => e.target === editWordModal && closeModal(editWordModal));
+        editWordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const wordId = editWordIdInput.value;
+            const updatedWord = editWordTextInput.value.trim();
+            const updatedMeaning = editMeaningTextInput.value.trim();
+            if (wordId && updatedWord && updatedMeaning) {
+                await updateWordInFirestore(wordId, updatedWord, updatedMeaning);
+                closeModal(editWordModal);
+            } else {
+                alert("単語と意味の両方を入力してください。");
+            }
+        });
+
+        async function main() {
+            mainMenuSection.classList.remove('active');
+            learningModeSection.classList.remove('active');
+            editingModeSection.classList.remove('active');
+            mistakesReviewModeSection.classList.remove('active'); // Added
+            loadingIndicator.classList.remove('hidden'); 
+
+            if (firebaseConfig) {
+                await initializeFirebase();
+            } else {
+                loadingIndicator.textContent = "Firebase設定が見つかりません。";
+                switchMode('menu'); 
+            }
+        }
+
+        main();
     </script>
 </body>
 </html>
