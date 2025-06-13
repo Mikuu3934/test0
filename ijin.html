@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>教職教養人物パズルクイズ</title>
-    <!-- Tailwind CSS CDNの読み込み -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Interフォントの適用 (Tailwindがデフォルトで適用する場合もあるが、念のため) */
@@ -30,6 +29,18 @@
             pointer-events: none; /* 正しい回答はクリック不可にする */
             cursor: default;
         }
+        /* キーワード表示エリアの調整 */
+        #terms-column {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* 最小200pxで自動調整 */
+            gap: 16px; /* アイテム間の隙間 */
+        }
+        /* 狭い画面では1列に */
+        @media (max-width: 640px) {
+            #terms-column {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -44,21 +55,15 @@
             </p>
 
             <div id="puzzle-area" class="flex flex-col lg:flex-row gap-6 sm:gap-8 justify-center">
-                <!-- 左側：人物名（タップターゲット） -->
                 <div id="names-column" class="flex-1 flex flex-col gap-4">
-                    <!-- 人物名はJavaScriptでここに動的に生成されます -->
-                </div>
+                    </div>
 
-                <!-- 右側：キーワード（タップ可能な要素） -->
-                <div id="terms-column" class="flex-1 flex flex-col gap-4">
-                    <!-- キーワードはJavaScriptでここに動的に生成されます -->
-                </div>
+                <div id="terms-column" class="flex-1">
+                    </div>
             </div>
 
-            <!-- メッセージボックス -->
             <div id="message-box" class="mt-8 p-4 hidden rounded-lg text-center text-white font-semibold shadow-md transition-all duration-300"></div>
 
-            <!-- リセットボタン -->
             <button id="reset-button" class="mt-8 mx-auto block px-8 py-3 bg-indigo-600 text-white font-semibold text-lg rounded-xl shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-transform transform hover:scale-105 active:scale-95">
                 もう一度遊ぶ
             </button>
@@ -67,7 +72,6 @@
 
     <script>
         // パズルデータ
-        // 各人物には複数のキーワード（originalTerms）が設定されています
         const puzzleData = [
             { id: 'dewey', name: 'デューイ', originalTerms: ['問題解決学習'] },
             { id: 'rousseau', name: 'ルソー', originalTerms: ['エミール', '万物をつくる者の手をはなれるときすべてはよいものであるが、人間の手にうつされるとすべてが悪くなる'] },
@@ -77,16 +81,15 @@
             { id: 'comenius', name: 'コメニウス', originalTerms: ['大教授学'] },
             { id: 'kilpatrick', name: 'キルパトリック', originalTerms: ['プロジェクト・メソッド'] },
             { id: 'petersen', name: 'ペーターゼン', originalTerms: ['イエナ・プラン'] },
-            // 新しく追加された人物とキーワード
             { id: 'skinner', name: 'スキナー', originalTerms: ['オペラント条件付け'] },
             { id: 'hall', name: 'ホール', originalTerms: ['反復説'] },
             { id: 'vygotsky', name: 'ヴィゴツキー', originalTerms: ['発達の最接近領域'] },
         ];
 
-        let correctIndividualTermsMatched = 0; // 個々のキーワードが正しくマッチした数をカウント
-        let totalPossibleTerms = 0; // 全てのキーワードの総数
-        let correctPeopleFullyMatched = 0; // 全てのキーワードがマッチした人物の数をカウント
-        let selectedTerm = null; // 現在選択されているキーワード要素
+        let correctIndividualTermsMatched = 0;
+        let totalPossibleTerms = 0;
+        let correctPeopleFullyMatched = 0;
+        let selectedTerm = null;
 
         const namesColumn = document.getElementById('names-column');
         const termsColumn = document.getElementById('terms-column');
@@ -109,87 +112,78 @@
 
         // パズルを初期化する関数
         function initializePuzzle() {
-            namesColumn.innerHTML = ''; // 列をクリア
+            namesColumn.innerHTML = '';
             termsColumn.innerHTML = '';
-            messageBox.classList.add('hidden'); // メッセージボックスを非表示に
-            messageBox.className = 'mt-8 p-4 hidden rounded-lg text-center text-white font-semibold shadow-md transition-all duration-300'; // クラスをリセット
-            correctIndividualTermsMatched = 0; // カウンターをリセット
-            totalPossibleTerms = 0; // 総キーワード数をリセット
-            correctPeopleFullyMatched = 0; // 完全マッチ人物数をリセット
-            selectedTerm = null; // 選択中のキーワードをリセット
+            messageBox.classList.add('hidden');
+            messageBox.className = 'mt-8 p-4 hidden rounded-lg text-center text-white font-semibold shadow-md transition-all duration-300';
+            correctIndividualTermsMatched = 0;
+            totalPossibleTerms = 0;
+            correctPeopleFullyMatched = 0;
+            selectedTerm = null;
 
-            // 全てのキーワードを一つの配列にまとめる
             let allDraggableTerms = [];
             puzzleData.forEach(person => {
                 person.originalTerms.forEach((termText, index) => {
                     allDraggableTerms.push({
-                        id: generateTermId(person.id, index), // ユニークなID
-                        personId: person.id, // 該当する人物のID
+                        id: generateTermId(person.id, index),
+                        personId: person.id,
                         text: termText
                     });
-                    totalPossibleTerms++; // 総キーワード数を加算
+                    totalPossibleTerms++;
                 });
             });
 
-            const shuffledDraggableTerms = shuffleArray(allDraggableTerms); // キーワードをシャッフル
-            const originalOrderNames = [...puzzleData]; // 人物名は元の順序を保持
+            const shuffledDraggableTerms = shuffleArray(allDraggableTerms);
+            // 人物名の順序もシャッフルするように変更
+            const shuffledNames = shuffleArray([...puzzleData]); // puzzleDataのコピーをシャッフル
 
-            // 人物名を生成 (タップターゲット)
-            originalOrderNames.forEach(person => {
+            shuffledNames.forEach(person => { // シャッフルされた人物名を使用
                 const nameDiv = document.createElement('div');
                 nameDiv.className = 'drop-zone p-4 bg-gray-100 rounded-lg border-2 border-gray-300 flex flex-col justify-start min-h-[120px] sm:min-h-[140px] transition-all duration-200 shadow-sm cursor-pointer hover:border-blue-400';
-                nameDiv.dataset.id = person.id; // データセットに人物IDを保存
-                nameDiv.dataset.matchedCount = 0; // この人物に正しくマッチしたキーワードの数
-                nameDiv.dataset.totalTerms = person.originalTerms.length; // この人物に紐づくキーワードの総数
+                nameDiv.dataset.id = person.id;
+                nameDiv.dataset.matchedCount = 0;
+                nameDiv.dataset.totalTerms = person.originalTerms.length;
                 nameDiv.innerHTML = `
                     <span class="text-xl sm:text-2xl font-bold text-gray-800">${person.name}</span>
                     <div class="matched-terms-container flex flex-wrap gap-2 mt-2"></div>
                 `;
-                nameDiv.addEventListener('click', handleNameClick); // クリックイベントに変更
+                nameDiv.addEventListener('click', handleNameClick);
                 namesColumn.appendChild(nameDiv);
             });
 
-            // キーワードを生成 (タップ可能な要素)
             shuffledDraggableTerms.forEach(item => {
                 const termDiv = document.createElement('div');
                 termDiv.className = 'draggable-term p-4 bg-white rounded-lg border-2 border-indigo-300 cursor-pointer shadow-md hover:shadow-lg transition-all duration-200';
-                termDiv.dataset.id = item.id; // キーワードのユニークID
-                termDiv.dataset.personId = item.personId; // 該当する人物のID
+                termDiv.dataset.id = item.id;
+                termDiv.dataset.personId = item.personId;
                 termDiv.textContent = item.text;
-                termDiv.addEventListener('click', handleTermClick); // クリックイベントに変更
+                termDiv.addEventListener('click', handleTermClick);
                 termsColumn.appendChild(termDiv);
             });
         }
 
-        // キーワードタップ時の処理
         function handleTermClick(e) {
             const clickedTerm = e.currentTarget;
 
-            // すでに正解済みのキーワードは選択不可
             if (clickedTerm.classList.contains('correct-match')) {
                 return;
             }
 
             if (selectedTerm === clickedTerm) {
-                // 同じキーワードを再度タップした場合、選択を解除
                 selectedTerm.classList.remove('selected');
                 selectedTerm = null;
             } else {
-                // 別のキーワードがすでに選択されている場合、その選択を解除
                 if (selectedTerm) {
                     selectedTerm.classList.remove('selected');
                 }
-                // 新しいキーワードを選択
                 clickedTerm.classList.add('selected');
                 selectedTerm = clickedTerm;
             }
         }
 
-        // 人物名タップ時の処理
         function handleNameClick(e) {
             const dropZone = e.currentTarget;
 
-            // ドロップゾーンがすでにすべてのキーワードで埋まっているかチェック
             const totalTermsForZone = parseInt(dropZone.dataset.totalTerms);
             const currentMatchedCountForZone = parseInt(dropZone.dataset.matchedCount);
             if (currentMatchedCountForZone === totalTermsForZone) {
@@ -197,75 +191,64 @@
                 return;
             }
 
-            // キーワードが選択されていない場合
             if (!selectedTerm) {
                 showMessage('キーワードを選択してください。', 'bg-yellow-500 border-yellow-700');
                 return;
             }
 
-            const droppedPersonId = selectedTerm.dataset.personId; // 選択されたキーワードが紐づく人物ID
-            const dropZoneId = dropZone.dataset.id; // タップされた人物のID
+            const droppedPersonId = selectedTerm.dataset.personId;
+            const dropZoneId = dropZone.dataset.id;
 
-            // 正しい組み合わせかチェック
             if (droppedPersonId === dropZoneId) {
-                // 正しい場合
                 const matchedTermsContainer = dropZone.querySelector('.matched-terms-container');
                 if (matchedTermsContainer) {
                     const matchedTermDisplay = document.createElement('span');
-                    matchedTermDisplay.className = 'px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium shadow-sm break-all'; // キーワード表示用のスタイル
+                    matchedTermDisplay.className = 'px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium shadow-sm break-all';
                     matchedTermDisplay.textContent = selectedTerm.textContent;
                     matchedTermsContainer.appendChild(matchedTermDisplay);
                 }
 
-                // 正しく配置されたキーワード自体のスタイルとクリック不可設定
-                selectedTerm.classList.remove('selected'); // 選択状態を解除
+                selectedTerm.classList.remove('selected');
                 selectedTerm.classList.add('correct-match');
-                selectedTerm.removeEventListener('click', handleTermClick); // クリックイベントを無効化
+                selectedTerm.removeEventListener('click', handleTermClick);
 
-                // 元の場所（termsColumn）から要素を削除
                 termsColumn.removeChild(selectedTerm);
 
-                // ドロップゾーン（人物ボックス）の正解数を更新
                 let newMatchedCount = currentMatchedCountForZone + 1;
                 dropZone.dataset.matchedCount = newMatchedCount;
 
                 showMessage('お見事！正しい組み合わせです！', 'bg-green-500 border-green-700');
 
-                // この人物の全てのキーワードがマッチしたかチェック
                 if (newMatchedCount === totalTermsForZone) {
-                    dropZone.classList.add('correct-match'); // 人物ボックス全体を正解スタイルにする
-                    correctPeopleFullyMatched++; // 全てのキーワードがマッチした人物数を加算
+                    dropZone.classList.add('correct-match');
+                    correctPeopleFullyMatched++;
                 }
 
-                correctIndividualTermsMatched++; // 個々のキーワードの正解数を加算
+                correctIndividualTermsMatched++;
 
-                // 全てのパズルがクリアされたかチェック
                 if (correctIndividualTermsMatched === totalPossibleTerms) {
                     showMessage('おめでとうございます！すべてのパズルをクリアしました！', 'bg-purple-600 border-purple-800');
                 }
             } else {
-                // 間違っている場合
                 showMessage('残念！もう一度試してみてください。', 'bg-red-500 border-red-700');
             }
-            selectedTerm.classList.remove('selected'); // 選択状態を解除
-            selectedTerm = null; // 選択中のキーワードをリセット
+            if (selectedTerm) {
+              selectedTerm.classList.remove('selected');
+            }
+            selectedTerm = null;
         }
 
-        // メッセージを表示する関数
         function showMessage(msg, classes) {
             messageBox.textContent = msg;
             messageBox.className = `mt-8 p-4 rounded-lg text-center text-white font-semibold shadow-md transition-all duration-300 ${classes}`;
             messageBox.classList.remove('hidden');
-            // 一定時間後にメッセージを非表示にする
             setTimeout(() => {
                 messageBox.classList.add('hidden');
             }, 3000);
         }
 
-        // リセットボタンのイベントリスナー
         resetButton.addEventListener('click', initializePuzzle);
 
-        // ページロード時にパズルを初期化
         window.onload = initializePuzzle;
     </script>
 </body>
