@@ -11,7 +11,14 @@
             font-family: 'Inter', sans-serif;
             background-color: #f8f8f8; /* 背景色を少し明るく */
         }
-        /* 選択中のキーワードのスタイル */
+        /* 選択中の人物のスタイル */
+        .drop-zone.selected {
+            border: 2px solid #3b82f6; /* blue-500 */
+            background-color: #e0f2fe; /* blue-100 */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* より目立つ影 */
+            transform: translateY(-2px); /* 少し上に浮き上がらせる */
+        }
+        /* 選択中のキーワードのスタイル (厳密なフローのため、基本的にはこのスタイルは使われない) */
         .draggable-term.selected {
             border: 2px solid #3b82f6; /* blue-500 */
             background-color: #e0f2fe; /* blue-100 */
@@ -32,13 +39,21 @@
         /* キーワード表示エリアの調整 */
         #terms-column {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* 最小200pxで自動調整 */
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 16px; /* アイテム間の隙間 */
+        }
+        /* 個々のキーワードアイテムの最大幅を設定 */
+        .draggable-term {
+            max-width: 300px; /* キーワードの最大幅を制限 */
+            word-wrap: break-word; /* 長い単語の折り返し */
         }
         /* 狭い画面では1列に */
         @media (max-width: 640px) {
             #terms-column {
                 grid-template-columns: 1fr;
+            }
+            .draggable-term {
+                max-width: none; /* スマホでは最大幅の制限をなくす */
             }
         }
     </style>
@@ -51,7 +66,7 @@
 
         <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200">
             <p class="text-gray-700 text-lg sm:text-xl text-center mb-6">
-                右のキーワードをタップして選択し、次に左の人物名をタップして配置しましょう。
+                左の人物をタップして選択し、次に右のキーワードをタップして配置しましょう。
             </p>
 
             <div id="puzzle-area" class="flex flex-col lg:flex-row gap-6 sm:gap-8 justify-center">
@@ -64,9 +79,14 @@
 
             <div id="message-box" class="mt-8 p-4 hidden rounded-lg text-center text-white font-semibold shadow-md transition-all duration-300"></div>
 
-            <button id="reset-button" class="mt-8 mx-auto block px-8 py-3 bg-indigo-600 text-white font-semibold text-lg rounded-xl shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-transform transform hover:scale-105 active:scale-95">
-                もう一度遊ぶ
-            </button>
+            <div class="flex flex-col sm:flex-row gap-4 mt-8 justify-center">
+                <button id="reset-button" class="px-8 py-3 bg-indigo-600 text-white font-semibold text-lg rounded-xl shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-transform transform hover:scale-105 active:scale-95">
+                    もう一度遊ぶ
+                </button>
+                <button id="review-button" class="px-8 py-3 bg-blue-600 text-white font-semibold text-lg rounded-xl shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-transform transform hover:scale-105 active:scale-95 hidden">
+                    間違えた問題を復習
+                </button>
+            </div>
         </div>
     </div>
 
@@ -89,12 +109,15 @@
         let correctIndividualTermsMatched = 0;
         let totalPossibleTerms = 0;
         let correctPeopleFullyMatched = 0;
-        let selectedTerm = null;
+        let selectedPersonElement = null; // 現在選択されている人物のDOM要素
+        let selectedTermElement = null;   // 現在選択されているキーワードのDOM要素 (厳密なフローでは一時的にしか使われない)
+        let incorrectlyAnsweredPersonIds = []; // 間違えた回答をした人物のIDを記憶する配列（セッション中に永続）
 
         const namesColumn = document.getElementById('names-column');
         const termsColumn = document.getElementById('terms-column');
         const messageBox = document.getElementById('message-box');
         const resetButton = document.getElementById('reset-button');
+        const reviewButton = document.getElementById('review-button');
 
         // 配列をシャッフルする関数 (Fisher-Yatesアルゴリズム)
         function shuffleArray(array) {
@@ -111,33 +134,43 @@
         }
 
         // パズルを初期化する関数
-        function initializePuzzle() {
+        // mode: 'full' (全問題), 'review' (間違えた問題のみ)
+        function initializePuzzle(mode = 'full') {
             namesColumn.innerHTML = '';
             termsColumn.innerHTML = '';
             messageBox.classList.add('hidden');
             messageBox.className = 'mt-8 p-4 hidden rounded-lg text-center text-white font-semibold shadow-md transition-all duration-300';
             correctIndividualTermsMatched = 0;
-            totalPossibleTerms = 0;
             correctPeopleFullyMatched = 0;
-            selectedTerm = null;
+            selectedPersonElement = null;
+            selectedTermElement = null; // 初期化時にもリセット
 
-            let allDraggableTerms = [];
-            puzzleData.forEach(person => {
-                person.originalTerms.forEach((termText, index) => {
-                    allDraggableTerms.push({
-                        id: generateTermId(person.id, index),
-                        personId: person.id,
-                        text: termText
-                    });
-                    totalPossibleTerms++;
-                });
-            });
+            let currentPuzzleData = [];
+            if (mode === 'review') {
+                if (incorrectlyAnsweredPersonIds.length > 0) {
+                    currentPuzzleData = puzzleData.filter(person => incorrectlyAnsweredPersonIds.includes(person.id));
+                } else {
+                    showMessage('復習する問題はありません。全問題が出題されます。', 'bg-blue-500 border-blue-700');
+                    currentPuzzleData = puzzleData;
+                }
+            } else {
+                currentPuzzleData = puzzleData;
+                incorrectlyAnsweredPersonIds = []; // 「もう一度遊ぶ」で全問スタート時に履歴をリセット
+            }
 
-            const shuffledDraggableTerms = shuffleArray(allDraggableTerms);
-            // 人物名の順序もシャッフルするように変更
-            const shuffledNames = shuffleArray([...puzzleData]); // puzzleDataのコピーをシャッフル
+            // 復習ボタンの表示状態を更新（履歴に間違いがあれば表示）
+            if (incorrectlyAnsweredPersonIds.length > 0) {
+                reviewButton.classList.remove('hidden');
+            } else {
+                reviewButton.classList.add('hidden');
+            }
 
-            shuffledNames.forEach(person => { // シャッフルされた人物名を使用
+            totalPossibleTerms = 0;
+            currentPuzzleData.forEach(person => totalPossibleTerms += person.originalTerms.length);
+
+            const shuffledNames = shuffleArray([...currentPuzzleData]);
+
+            shuffledNames.forEach(person => {
                 const nameDiv = document.createElement('div');
                 nameDiv.className = 'drop-zone p-4 bg-gray-100 rounded-lg border-2 border-gray-300 flex flex-col justify-start min-h-[120px] sm:min-h-[140px] transition-all duration-200 shadow-sm cursor-pointer hover:border-blue-400';
                 nameDiv.dataset.id = person.id;
@@ -147,9 +180,21 @@
                     <span class="text-xl sm:text-2xl font-bold text-gray-800">${person.name}</span>
                     <div class="matched-terms-container flex flex-wrap gap-2 mt-2"></div>
                 `;
-                nameDiv.addEventListener('click', handleNameClick);
+                nameDiv.addEventListener('click', handlePersonClick); // Personクリックリスナー
                 namesColumn.appendChild(nameDiv);
             });
+
+            let allDraggableTermsForCurrentMode = [];
+            currentPuzzleData.forEach(person => {
+                person.originalTerms.forEach((termText, index) => {
+                    allDraggableTermsForCurrentMode.push({
+                        id: generateTermId(person.id, index),
+                        personId: person.id,
+                        text: termText
+                    });
+                });
+            });
+            const shuffledDraggableTerms = shuffleArray(allDraggableTermsForCurrentMode);
 
             shuffledDraggableTerms.forEach(item => {
                 const termDiv = document.createElement('div');
@@ -157,87 +202,149 @@
                 termDiv.dataset.id = item.id;
                 termDiv.dataset.personId = item.personId;
                 termDiv.textContent = item.text;
-                termDiv.addEventListener('click', handleTermClick);
+                termDiv.addEventListener('click', handleTermClick); // Termクリックリスナー
                 termsColumn.appendChild(termDiv);
             });
         }
 
+        // 人物タップ時の処理
+        function handlePersonClick(e) {
+            const clickedPerson = e.currentTarget;
+
+            // この人物ボックスがすでに全てのキーワードで埋まっているかチェック
+            const totalTermsForZone = parseInt(clickedPerson.dataset.totalTerms);
+            const currentMatchedCountForZone = parseInt(clickedPerson.dataset.matchedCount);
+            if (currentMatchedCountForZone === totalTermsForZone) {
+                showMessage('この人物にはすべてのキーワードが正解されています。', 'bg-yellow-500 border-yellow-700');
+                // すでに完了している人物をタップしても選択状態にはしない
+                if (selectedPersonElement === clickedPerson) { // 選択解除のみ許可
+                    selectedPersonElement.classList.remove('selected');
+                    selectedPersonElement = null;
+                }
+                return;
+            }
+
+            if (selectedTermElement) { // キーワードがすでに選択されている場合（2回目のタップ）
+                // キーワード -> 人物のマッチングを試みる
+                attemptMatch(clickedPerson, selectedTermElement);
+
+                // マッチング後、両方の選択を解除
+                selectedTermElement.classList.remove('selected');
+                selectedTermElement = null;
+                if (selectedPersonElement) { // 以前に人物が選択されていた場合も解除
+                    selectedPersonElement.classList.remove('selected');
+                    selectedPersonElement = null;
+                }
+            } else { // キーワードが選択されていない場合（1回目のタップ）
+                if (selectedPersonElement === clickedPerson) { // 同じ人物を再度タップした場合（選択解除）
+                    clickedPerson.classList.remove('selected');
+                    selectedPersonElement = null;
+                    showMessage('人物の選択を解除しました。', 'bg-gray-500 text-white');
+                } else { // 新しい人物を選択した場合
+                    if (selectedPersonElement) { // 別の人物がすでに選択されている場合、その選択を解除
+                        selectedPersonElement.classList.remove('selected');
+                    }
+                    clickedPerson.classList.add('selected');
+                    selectedPersonElement = clickedPerson;
+                    showMessage('キーワードを選択してください。', 'bg-blue-500 border-blue-700');
+                }
+            }
+        }
+
+        // キーワードタップ時の処理
         function handleTermClick(e) {
             const clickedTerm = e.currentTarget;
 
+            // すでに正解済みのキーワードは操作不可
             if (clickedTerm.classList.contains('correct-match')) {
                 return;
             }
 
-            if (selectedTerm === clickedTerm) {
-                selectedTerm.classList.remove('selected');
-                selectedTerm = null;
-            } else {
-                if (selectedTerm) {
-                    selectedTerm.classList.remove('selected');
+            if (selectedPersonElement) { // 人物がすでに選択されている場合（2回目のタップ）
+                // 人物 -> キーワードのマッチングを試みる
+                attemptMatch(selectedPersonElement, clickedTerm);
+
+                // マッチング後、両方の選択を解除
+                selectedPersonElement.classList.remove('selected');
+                selectedPersonElement = null;
+                if (selectedTermElement) { // 以前にキーワードが選択されていた場合も解除 (通常はこのパスでselectedTermElementはnull)
+                    selectedTermElement.classList.remove('selected');
+                    selectedTermElement = null;
                 }
-                clickedTerm.classList.add('selected');
-                selectedTerm = clickedTerm;
+            } else { // 人物が選択されていない場合（1回目のタップ）
+                showMessage('先に人物を選択してください。', 'bg-yellow-500 border-yellow-700');
+                // キーワードは選択状態にしない (ユーザーの意図に沿うため)
+                // 万が一selectedTermElementに何か入っていた場合も解除する
+                if (selectedTermElement) {
+                     selectedTermElement.classList.remove('selected');
+                     selectedTermElement = null;
+                }
             }
         }
 
-        function handleNameClick(e) {
-            const dropZone = e.currentTarget;
+        // マッチング処理と状態リセットを行うヘルパー関数
+        function attemptMatch(personElement, termElement) {
+            const termPersonId = termElement.dataset.personId;
+            const personId = personElement.dataset.id;
 
-            const totalTermsForZone = parseInt(dropZone.dataset.totalTerms);
-            const currentMatchedCountForZone = parseInt(dropZone.dataset.matchedCount);
-            if (currentMatchedCountForZone === totalTermsForZone) {
-                showMessage('この人物にはすべてのキーワードが正解されています。', 'bg-yellow-500 border-yellow-700');
-                return;
-            }
+            const totalTermsForPerson = parseInt(personElement.dataset.totalTerms);
+            let currentMatchedCountForPerson = parseInt(personElement.dataset.matchedCount);
 
-            if (!selectedTerm) {
-                showMessage('キーワードを選択してください。', 'bg-yellow-500 border-yellow-700');
-                return;
-            }
-
-            const droppedPersonId = selectedTerm.dataset.personId;
-            const dropZoneId = dropZone.dataset.id;
-
-            if (droppedPersonId === dropZoneId) {
-                const matchedTermsContainer = dropZone.querySelector('.matched-terms-container');
+            if (termPersonId === personId) {
+                // 正しい場合
+                const matchedTermsContainer = personElement.querySelector('.matched-terms-container');
                 if (matchedTermsContainer) {
                     const matchedTermDisplay = document.createElement('span');
                     matchedTermDisplay.className = 'px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium shadow-sm break-all';
-                    matchedTermDisplay.textContent = selectedTerm.textContent;
+                    matchedTermDisplay.textContent = termElement.textContent;
                     matchedTermsContainer.appendChild(matchedTermDisplay);
                 }
 
-                selectedTerm.classList.remove('selected');
-                selectedTerm.classList.add('correct-match');
-                selectedTerm.removeEventListener('click', handleTermClick);
+                termElement.classList.remove('selected'); // 選択状態を解除
+                termElement.classList.add('correct-match');
+                termElement.removeEventListener('click', handleTermClick); // クリックイベントを無効化
 
-                termsColumn.removeChild(selectedTerm);
+                // 元の場所（termsColumn）から要素を削除
+                if (termsColumn.contains(termElement)) {
+                    termsColumn.removeChild(termElement);
+                }
 
-                let newMatchedCount = currentMatchedCountForZone + 1;
-                dropZone.dataset.matchedCount = newMatchedCount;
+                currentMatchedCountForPerson++;
+                personElement.dataset.matchedCount = currentMatchedCountForPerson;
 
                 showMessage('お見事！正しい組み合わせです！', 'bg-green-500 border-green-700');
 
-                if (newMatchedCount === totalTermsForZone) {
-                    dropZone.classList.add('correct-match');
+                if (currentMatchedCountForPerson === totalTermsForPerson) {
+                    personElement.classList.add('correct-match');
                     correctPeopleFullyMatched++;
+                    // 正解した人物は間違えたリストから削除
+                    incorrectlyAnsweredPersonIds = incorrectlyAnsweredPersonIds.filter(id => id !== personId);
                 }
 
                 correctIndividualTermsMatched++;
 
                 if (correctIndividualTermsMatched === totalPossibleTerms) {
-                    showMessage('おめでとうございます！すべてのパズルをクリアしました！', 'bg-purple-600 border-purple-800');
+                    showMessage('おめでとうございます！現在のラウンドの全てのパズルをクリアしました！', 'bg-purple-600 border-purple-800');
                 }
+
+                if (incorrectlyAnsweredPersonIds.length === 0) {
+                    reviewButton.classList.add('hidden');
+                } else {
+                    reviewButton.classList.remove('hidden');
+                }
+
             } else {
+                // 間違っている場合
                 showMessage('残念！もう一度試してみてください。', 'bg-red-500 border-red-700');
+                // 間違えた人物のIDをリストに追加（重複しないように、かつキーワードの元人物IDを追加）
+                if (!incorrectlyAnsweredPersonIds.includes(termPersonId)) {
+                    incorrectlyAnsweredPersonIds.push(termPersonId);
+                }
+                reviewButton.classList.remove('hidden');
             }
-            if (selectedTerm) {
-              selectedTerm.classList.remove('selected');
-            }
-            selectedTerm = null;
         }
 
+        // メッセージを表示する関数
         function showMessage(msg, classes) {
             messageBox.textContent = msg;
             messageBox.className = `mt-8 p-4 rounded-lg text-center text-white font-semibold shadow-md transition-all duration-300 ${classes}`;
@@ -247,8 +354,13 @@
             }, 3000);
         }
 
-        resetButton.addEventListener('click', initializePuzzle);
+        // リセットボタンのイベントリスナー（全問題で最初から開始、履歴もリセット）
+        resetButton.addEventListener('click', () => initializePuzzle('full'));
 
+        // 復習ボタンのイベントリスナー
+        reviewButton.addEventListener('click', () => initializePuzzle('review'));
+
+        // ページロード時にパズルを初期化
         window.onload = initializePuzzle;
     </script>
 </body>
