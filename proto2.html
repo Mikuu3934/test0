@@ -1,1 +1,497 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英語学習アプリ | プロトタイプ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* カスタムスタイル */
+        body {
+            font-family: 'Helvetica Neue', 'Arial', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Meiryo', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .screen { display: none; }
+        .screen.active { display: block; }
+        .btn-press { transition: transform 0.1s ease; }
+        .btn-press:active { transform: scale(0.95); }
+        @keyframes feedback-anim {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .feedback-icon { animation: feedback-anim 0.5s ease-out forwards; }
+        .xp-gain-anim {
+            animation: xp-gain-float 1.5s ease-out forwards;
+        }
+        @keyframes xp-gain-float {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-40px); opacity: 0; }
+        }
+        .calendar-day.learned { background-color: #90cdf4; color: white; }
+        .calendar-day.today { border: 2px solid #4299e1; }
+    </style>
+</head>
+<body class="bg-slate-100">
+
+    <div id="app-container" class="max-w-lg mx-auto bg-white min-h-screen shadow-lg">
+
+        <!-- ===== 共通ヘッダー (Player Stats) ===== -->
+        <header id="player-stats-header" class="p-4 bg-slate-800 text-white sticky top-0 z-10">
+            <div class="flex justify-between items-center">
+                <div class="font-bold">Lv. <span id="player-level">1</span></div>
+                <div class="flex-grow mx-4">
+                    <div class="w-full bg-slate-600 rounded-full h-4">
+                        <div id="player-xp-bar" class="bg-yellow-400 h-4 rounded-full text-right pr-2 text-xs text-slate-800 font-bold" style="width: 10%;">XP</div>
+                    </div>
+                </div>
+                <div class="text-sm"><span id="player-xp">10</span> / <span id="xp-to-next-level">100</span></div>
+            </div>
+        </header>
+
+        <!-- ===== ホーム画面 (Home Screen) ===== -->
+        <div id="screen-home" class="screen active p-6">
+            <!-- デイリーチャレンジ -->
+            <section id="daily-challenge-section" class="mb-8">
+                <h2 class="text-xl font-bold text-slate-700 mb-3 flex items-center"><i class="fas fa-star text-yellow-400 mr-2"></i>デイリーチャレンジ</h2>
+                <div id="daily-challenge-card" class="bg-yellow-100 border-l-4 border-yellow-400 text-yellow-800 p-4 rounded-md shadow">
+                    <!-- JSで内容が挿入されます -->
+                </div>
+            </section>
+            
+            <!-- 学習カレンダー -->
+            <section id="calendar-section" class="mb-8">
+                 <h2 class="text-xl font-bold text-slate-700 mb-3 flex items-center"><i class="fas fa-calendar-alt text-blue-500 mr-2"></i>学習カレンダー</h2>
+                 <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center text-sm">
+                    <!-- JSでカレンダーが生成されます -->
+                 </div>
+            </section>
+
+            <!-- 課題セクション -->
+            <section id="assignments-section" class="mb-8">
+                <h2 class="text-xl font-bold text-slate-700 mb-3 flex items-center"><i class="fas fa-clipboard-list text-red-500 mr-2"></i>先生からの課題</h2>
+                <div id="assignments-list" class="space-y-3"></div>
+            </section>
+            
+            <!-- 学習グループ -->
+            <section id="group-section" class="mb-8">
+                <h2 class="text-xl font-bold text-slate-700 mb-3 flex items-center"><i class="fas fa-users text-purple-500 mr-2"></i>学習グループ</h2>
+                <div id="group-feed" class="bg-slate-100 p-3 rounded-lg h-32 overflow-y-auto space-y-2">
+                    <!-- JSでグループの活動が挿入されます -->
+                </div>
+            </section>
+
+            <!-- 自己学習セクション -->
+            <section id="self-study-section" class="mt-10">
+                <h2 class="text-xl font-bold text-slate-700 mb-4 border-b-2 border-green-500 pb-2">自己学習メニュー</h2>
+                <div class="grid grid-cols-1 gap-4">
+                    <button onclick="startSelfStudy('vocabulary')" class="btn-press bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-4 rounded-lg shadow-md flex items-center justify-center text-lg"><i class="fas fa-book mr-3"></i> 単語トレーニング</button>
+                    <button onclick="startSelfStudy('grammar')" class="btn-press bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-4 rounded-lg shadow-md flex items-center justify-center text-lg"><i class="fas fa-pen-ruler mr-3"></i> 文法トレーニング</button>
+                    <button onclick="showScreen('screen-speaking')" class="btn-press bg-purple-500 hover:bg-purple-600 text-white font-bold py-4 px-4 rounded-lg shadow-md flex items-center justify-center text-lg"><i class="fas fa-microphone-alt mr-3"></i> スピーキング練習</button>
+                </div>
+            </section>
+        </div>
+
+        <!-- ===== クイズ画面 (Quiz Screen) ===== -->
+        <div id="screen-quiz" class="screen p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="quiz-title" class="text-2xl font-bold text-slate-800">単語トレーニング</h2>
+                <p class="text-slate-500 font-semibold"><span id="current-q-num">1</span> / <span id="total-q-num">10</span></p>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mb-6"><div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 10%"></div></div>
+            <div id="question-area" class="mb-6 text-center"><p id="question-text" class="text-2xl md:text-3xl font-bold text-slate-800 bg-slate-100 p-8 rounded-lg"></p></div>
+            <div id="options-area" class="grid grid-cols-1 gap-4"></div>
+            
+            <!-- メタ言語的フィードバック（ヒント）エリア -->
+            <div id="hint-area" class="mt-6 text-center hidden">
+                <div class="p-4 rounded-lg bg-orange-100 border-l-4 border-orange-400">
+                    <h3 class="font-bold text-orange-700">ヒント</h3>
+                    <p id="hint-text" class="mt-2 text-orange-600"></p>
+                </div>
+                <button id="retry-btn" onclick="retryQuestion()" class="btn-press mt-4 w-full bg-orange-500 text-white font-bold py-3 px-4 rounded-lg shadow-md text-lg">もう一度回答する</button>
+            </div>
+
+            <!-- 正解・不正解フィードバックエリア -->
+            <div id="feedback-area" class="mt-6 text-center hidden">
+                <div id="feedback-result" class="p-4 rounded-lg">
+                    <h3 id="feedback-title" class="text-2xl font-bold"></h3>
+                    <p id="feedback-explanation" class="mt-2 text-slate-600"></p>
+                </div>
+                <button id="next-btn" onclick="nextQuestion()" class="btn-press mt-4 w-full bg-gray-800 text-white font-bold py-3 px-4 rounded-lg shadow-md text-lg">次へ</button>
+            </div>
+            
+            <div id="feedback-icon-container" class="fixed inset-0 flex items-center justify-center pointer-events-none"></div>
+            <div id="xp-gain-container" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none text-2xl font-bold text-yellow-500"></div>
+        </div>
+        
+        <!-- ===== スピーキング画面 (Speaking Screen) ===== -->
+        <div id="screen-speaking" class="screen p-6">
+            <header class="flex items-center mb-6">
+                <button onclick="goHome()" class="text-slate-500 mr-4"><i class="fas fa-chevron-left fa-lg"></i></button>
+                <h1 class="text-3xl font-bold text-slate-800">スピーキング練習</h1>
+            </header>
+            <div class="bg-slate-100 p-4 rounded-lg">
+                <h3 class="font-bold text-slate-700 mb-2">シチュエーション：道案内</h3>
+                <div id="dialogue-area" class="space-y-4">
+                    <div class="flex"><div class="w-10 h-10 rounded-full bg-orange-400 flex items-center justify-center text-white font-bold mr-3 flex-shrink-0">AI</div><div class="bg-white p-3 rounded-lg rounded-tl-none shadow">Excuse me, how can I get to the station?</div></div>
+                    <div class="flex flex-row-reverse"><div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold ml-3 flex-shrink-0">You</div><div id="user-speech-bubble" class="bg-blue-100 p-3 rounded-lg rounded-tr-none shadow"><p class="text-slate-500 italic">"Go straight and turn left." と言ってみよう</p></div></div>
+                </div>
+                <div id="speaking-feedback" class="text-center mt-4 h-8"></div>
+            </div>
+            <div class="text-center mt-8">
+                <button id="mic-btn" onclick="startRecording()" class="btn-press bg-red-500 text-white rounded-full w-20 h-20 flex items-center justify-center shadow-lg text-3xl"><i class="fas fa-microphone-alt"></i></button>
+                <p id="mic-status" class="mt-2 text-slate-500">タップして開始</p>
+            </div>
+        </div>
+
+        <!-- ===== 結果画面 (Result Screen) ===== -->
+        <div id="screen-result" class="screen p-8 text-center">
+            <h1 class="text-4xl font-bold text-slate-800 mb-4">結果発表</h1>
+            <div class="bg-slate-100 p-6 rounded-lg shadow-inner">
+                <p class="text-lg text-slate-600">正解数</p>
+                <p class="text-6xl font-bold text-blue-600 my-2"><span id="score">8</span> / <span id="total-score">10</span></p>
+                <div class="w-full bg-gray-200 rounded-full h-4 my-4"><div id="score-bar" class="bg-blue-600 h-4 rounded-full" style="width: 80%"></div></div>
+                <p id="result-message" class="text-xl font-semibold text-slate-700 mt-4"></p>
+            </div>
+            <button onclick="goHome()" class="btn-press mt-8 w-full bg-gray-800 text-white font-bold py-4 px-4 rounded-lg shadow-md text-lg">ホームに戻る</button>
+        </div>
+    </div>
+
+    <script>
+    // ===== データ定義 (Data Definitions) =====
+    const vocabularyProblems = [
+        { id: 'v1', level: 1, question: 'implement', options: ['実行する', '輸入する', '評価する', '予測する'], answer: '実行する', explanation: 'implementは「（計画などを）実行する、実施する」という意味の動詞です。', hint: '「計画を実行に移す」のような文脈で使われる動詞だよ。' },
+        { id: 'v2', level: 1, question: 'significant', options: ['些細な', '重要な', '複雑な', '伝統的な'], answer: '重要な', explanation: 'significantは「重要な、かなりの」という意味の形容詞です。', hint: 'importantと似た意味を持つ単語だよ。' },
+        { id: 'v3', level: 2, question: 'consequence', options: ['原因', '過程', '結果', '例外'], answer: '結果', explanation: 'consequenceは「（必然的な）結果、影響」という意味の名詞です。', hint: '「行動の結果」のように、何かの後で起こることだよ。' },
+        { id: 'v4', level: 2, question: 'approve', options: ['反対する', '無視する', '提案する', '承認する'], answer: '承認する', explanation: 'approveは「～を承認する、賛成する」という意味の動詞です。', hint: '親が子供の計画に「OK」を出すようなイメージだよ。' },
+        { id: 'v5', level: 3, question: 'negotiate', options: ['交渉する', '発表する', '拒否する', '投資する'], answer: '交渉する', explanation: 'negotiateは「交渉する」という意味の動詞です。', hint: '国と国が話し合って何かを決めるときに使う言葉だよ。' }
+    ];
+    const grammarProblems = [
+        { id: 'g1', level: 1, question: 'He is taller (   ) me.', options: ['as', 'than', 'of', 'from'], answer: 'than', explanation: '比較級では、比較対象の前にthanを置きます。', hint: '「～よりも」という意味を表す単語を選ぼう。' },
+        { id: 'g2', level: 1, question: 'I have (   ) to Paris twice.', options: ['go', 'went', 'gone', 'been'], answer: 'been', explanation: '「～へ行ったことがある」という経験を表す現在完了形は have been to を使います。', hint: '「経験」を表す現在完了形の特別な形だよ。' },
+        { id: 'g3', level: 2, question: 'This is the book (   ) I bought yesterday.', options: ['who', 'which', 'where', 'when'], answer: 'which', explanation: '先行詞が「モノ」の場合、目的格の関係代名詞whichまたはthatを使います。', hint: '先行詞の "the book" は人？それともモノ？' },
+        { id: 'g4', level: 2, question: 'You should (   ) listening to the teacher.', options: ['is', 'are', 'be', 'to be'], answer: 'be', explanation: '助動詞 (should) の後は動詞の原形がきます。進行形なのでbe listeningとなります。', hint: 'shouldのような助動詞の後の動詞はどんな形になるかな？' },
+        { id: 'g5', level: 3, question: 'If I (   ) a bird, I could fly.', options: ['am', 'was', 'were', 'be'], answer: 'were', explanation: '現在の事実とは異なることを仮定する仮定法過去では、be動詞は主語に関わらずwereを使います。', hint: '「もし～だったらなあ」という現実とは違う話（仮定法）をするときのbe動詞は特別だよ。' }
+    ];
+    let assignments = [
+        { id: 'a1', title: 'Unit 5 まとめ', problems: ['v1', 'v3', 'g2'], completed: false },
+        { id: 'a2', title: '比較級の復習', problems: ['g1', 'g5'], completed: false },
+        { id: 'a3', title: '重要動詞チェック', problems: ['v1', 'v4', 'v5'], completed: true }
+    ];
+    const learningGroup = {
+        name: "チーム・チャレンジャーズ",
+        members: ["あなた", "佐藤さん", "鈴木さん"],
+        feed: [
+            { user: "鈴木さん", action: "「比較級の復習」をクリア！", time: "3時間前" },
+            { user: "佐藤さん", "action": "レベル3にアップ！", time: "8時間前" },
+            { user: "あなた", "action": "「Unit 5 まとめ」をクリア！", time: "昨日" },
+        ]
+    };
+
+    // ===== アプリケーションの状態管理 (State Management) =====
+    let playerState = {
+        level: 1,
+        xp: 0,
+        xpForNextLevel: 100,
+        learnedDays: [2, 5, 6, 10, 14], // 学習した日 (シミュレーション用)
+        dailyChallenge: {
+            description: "単語問題を3問解こう！",
+            targetCount: 3,
+            currentCount: 0,
+            completed: false,
+            reward: 50 // XP
+        }
+    };
+    let currentQuiz = {
+        problems: [],
+        currentProblemIndex: 0,
+        score: 0,
+        mode: '',
+        isRetry: false // ヒント後の再挑戦かどうかのフラグ
+    };
+
+    // ===== 画面遷移 (Screen Navigation) =====
+    const screens = document.querySelectorAll('.screen');
+    function showScreen(screenId) {
+        screens.forEach(screen => screen.classList.toggle('active', screen.id === screenId));
+    }
+
+    // ===== ホーム画面の初期化 (Home Screen Initialization) =====
+    function initializeHome() {
+        renderPlayerStats();
+        renderDailyChallenge();
+        renderCalendar();
+        renderAssignments();
+        renderGroupFeed();
+    }
+    
+    // ===== ゲーミフィケーション要素の描画 =====
+    function renderPlayerStats() {
+        document.getElementById('player-level').textContent = playerState.level;
+        document.getElementById('player-xp').textContent = playerState.xp;
+        document.getElementById('xp-to-next-level').textContent = playerState.xpForNextLevel;
+        const xpPercentage = (playerState.xp / playerState.xpForNextLevel) * 100;
+        document.getElementById('player-xp-bar').style.width = `${xpPercentage}%`;
+    }
+
+    function addXp(amount) {
+        playerState.xp += amount;
+        
+        // XP獲得アニメーション
+        const xpContainer = document.getElementById('xp-gain-container');
+        xpContainer.innerHTML = `<span class="xp-gain-anim">+${amount} XP</span>`;
+        setTimeout(() => { xpContainer.innerHTML = ''; }, 1500);
+
+        if (playerState.xp >= playerState.xpForNextLevel) {
+            // レベルアップ
+            playerState.level++;
+            playerState.xp -= playerState.xpForNextLevel;
+            playerState.xpForNextLevel = Math.floor(playerState.xpForNextLevel * 1.5);
+            // TODO: レベルアップ演出
+        }
+        renderPlayerStats();
+    }
+
+    function renderDailyChallenge() {
+        const card = document.getElementById('daily-challenge-card');
+        const challenge = playerState.dailyChallenge;
+        if (challenge.completed) {
+            card.innerHTML = `<p class="font-bold"><i class="fas fa-check-circle text-green-500"></i> 今日のチャレンジ達成！</p><p>よく頑張りました！</p>`;
+            card.classList.remove('bg-yellow-100', 'border-yellow-400', 'text-yellow-800');
+            card.classList.add('bg-green-100', 'border-green-400', 'text-green-800');
+        } else {
+            card.innerHTML = `<p class="font-bold">${challenge.description} (${challenge.currentCount}/${challenge.targetCount})</p><p>達成で ${challenge.reward}XP ゲット！</p>`;
+        }
+    }
+
+    function completeDailyChallenge(type) {
+        const challenge = playerState.dailyChallenge;
+        if (challenge.completed) return;
+        
+        if ((type === 'vocabulary' && challenge.description.includes('単語')) || (type === 'grammar' && challenge.description.includes('文法'))) {
+            challenge.currentCount++;
+        }
+        
+        if (challenge.currentCount >= challenge.targetCount) {
+            challenge.completed = true;
+            addXp(challenge.reward);
+            // TODO: 達成通知
+        }
+        renderDailyChallenge();
+    }
+
+    function renderCalendar() {
+        const grid = document.getElementById('calendar-grid');
+        grid.innerHTML = '';
+        const today = new Date().getDate();
+        const daysInMonth = 30; // Simulating a month
+        const dayHeaders = ['日', '月', '火', '水', '木', '金', '土'];
+        dayHeaders.forEach(day => {
+            const dayEl = document.createElement('div');
+            dayEl.className = 'font-bold text-slate-500';
+            dayEl.textContent = day;
+            grid.appendChild(dayEl);
+        });
+
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dayEl = document.createElement('div');
+            dayEl.className = 'calendar-day p-1 rounded-full';
+            dayEl.textContent = i;
+            if (playerState.learnedDays.includes(i)) {
+                dayEl.classList.add('learned');
+            }
+            if (i === today) {
+                dayEl.classList.add('today');
+            }
+            grid.appendChild(dayEl);
+        }
+    }
+
+    function renderGroupFeed() {
+        const feed = document.getElementById('group-feed');
+        feed.innerHTML = '';
+        learningGroup.feed.forEach(item => {
+            const feedItem = document.createElement('div');
+            feedItem.className = 'text-sm text-slate-600';
+            feedItem.innerHTML = `<i class="fas fa-check-circle text-green-500 mr-1"></i><b>${item.user}</b>が${item.action} <span class="text-xs text-slate-400 float-right">${item.time}</span>`;
+            feed.appendChild(feedItem);
+        });
+    }
+    
+    function renderAssignments() {
+        const list = document.getElementById('assignments-list');
+        list.innerHTML = '';
+        if (assignments.filter(a => !a.completed).length === 0) {
+            list.innerHTML = '<p class="text-slate-500 p-3 bg-slate-50 rounded-md">未完了の課題はありません。</p>';
+            return;
+        }
+        assignments.forEach(assignment => {
+            if (assignment.completed) return;
+            const card = document.createElement('div');
+            card.className = `p-3 rounded-lg shadow-sm flex justify-between items-center bg-white`;
+            card.innerHTML = `
+                <div>
+                    <h3 class="font-bold text-slate-800">${assignment.title}</h3>
+                    <p class="text-sm text-slate-500">${assignment.problems.length}問</p>
+                </div>
+                <button onclick="startAssignment('${assignment.id}')" class="btn-press bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md">挑戦する</button>
+            `;
+            list.appendChild(card);
+        });
+    }
+
+    // ===== クイズロジック (Quiz Logic) =====
+    function startQuiz(mode, problems, assignmentId = null) {
+        currentQuiz.mode = mode;
+        currentQuiz.problems = problems;
+        currentQuiz.currentProblemIndex = 0;
+        currentQuiz.score = 0;
+        currentQuiz.assignmentId = assignmentId;
+
+        document.getElementById('quiz-title').textContent = mode === 'vocabulary' ? '単語トレーニング' : (mode === 'grammar' ? '文法トレーニング' : `課題: ${assignments.find(a=>a.id === assignmentId).title}`);
+        document.getElementById('total-q-num').textContent = problems.length;
+        
+        displayQuestion();
+        showScreen('screen-quiz');
+    }
+    
+    function startSelfStudy(mode) {
+        const problemSet = mode === 'vocabulary' ? vocabularyProblems : grammarProblems;
+        // i+1仮説: 自分のレベル±1の問題を優先的に選ぶ
+        const suitableProblems = problemSet.filter(p => p.level >= playerState.level -1 && p.level <= playerState.level + 1);
+        const problems = suitableProblems.sort(() => Math.random() - 0.5).slice(0, 5); // 5問出題
+        startQuiz(mode, problems);
+    }
+    
+    function startAssignment(assignmentId) {
+        const assignment = assignments.find(a => a.id === assignmentId);
+        if (!assignment) return;
+        const problems = assignment.problems.map(id => vocabularyProblems.find(p => p.id === id) || grammarProblems.find(p => p.id === id)).filter(p => p);
+        startQuiz('assignment', problems, assignmentId);
+    }
+
+    function displayQuestion() {
+        // 各種エリアをリセット
+        document.getElementById('feedback-area').classList.add('hidden');
+        document.getElementById('hint-area').classList.add('hidden');
+        document.getElementById('options-area').innerHTML = '';
+        currentQuiz.isRetry = false;
+
+        const problem = currentQuiz.problems[currentQuiz.currentProblemIndex];
+        document.getElementById('question-text').textContent = problem.question;
+        document.getElementById('current-q-num').textContent = currentQuiz.currentProblemIndex + 1;
+        const progress = ((currentQuiz.currentProblemIndex + 1) / currentQuiz.problems.length) * 100;
+        document.getElementById('progress-bar').style.width = `${progress}%`;
+
+        const shuffledOptions = [...problem.options].sort(() => Math.random() - 0.5);
+        shuffledOptions.forEach(option => {
+            const button = document.createElement('button');
+            button.className = 'btn-press w-full bg-white hover:bg-slate-200 border-2 border-slate-300 text-slate-700 font-semibold py-3 px-4 rounded-lg shadow-sm';
+            button.textContent = option;
+            button.onclick = () => selectAnswer(option);
+            document.getElementById('options-area').appendChild(button);
+        });
+    }
+    
+    function retryQuestion() {
+        document.getElementById('hint-area').classList.add('hidden');
+        const optionButtons = document.querySelectorAll('#options-area button');
+        optionButtons.forEach(btn => {
+            btn.disabled = false;
+            btn.className = 'btn-press w-full bg-white hover:bg-slate-200 border-2 border-slate-300 text-slate-700 font-semibold py-3 px-4 rounded-lg shadow-sm';
+        });
+    }
+
+    function selectAnswer(selectedOption) {
+        const optionButtons = document.querySelectorAll('#options-area button');
+        optionButtons.forEach(btn => btn.disabled = true);
+
+        const problem = currentQuiz.problems[currentQuiz.currentProblemIndex];
+        const isCorrect = selectedOption === problem.answer;
+        const feedbackIconContainer = document.getElementById('feedback-icon-container');
+        feedbackIconContainer.innerHTML = '';
+        
+        if (isCorrect) {
+            // 正解の場合
+            if (!currentQuiz.isRetry) { // 1回目で正解
+                addXp(20);
+            } else { // 2回目で正解
+                addXp(10);
+            }
+            if (currentQuiz.mode !== 'assignment') {
+                completeDailyChallenge(currentQuiz.mode);
+            }
+            currentQuiz.score++;
+            document.getElementById('feedback-title').textContent = '正解！';
+            document.getElementById('feedback-title').className = 'text-2xl font-bold text-green-500';
+            document.getElementById('feedback-explanation').innerHTML = `正解は「<b>${problem.answer}</b>」。<br>${problem.explanation}`;
+            document.getElementById('feedback-area').classList.remove('hidden');
+            feedbackIconContainer.innerHTML = `<i class="fas fa-circle text-green-400 text-9xl opacity-50 feedback-icon"></i>`;
+        } else {
+            // 不正解の場合
+            if (!currentQuiz.isRetry) {
+                // 1回目の不正解 -> ヒントを提示
+                currentQuiz.isRetry = true;
+                document.getElementById('hint-text').textContent = problem.hint;
+                document.getElementById('hint-area').classList.remove('hidden');
+            } else {
+                // 2回目の不正解 -> 答えを表示
+                document.getElementById('feedback-title').textContent = '不正解...';
+                document.getElementById('feedback-title').className = 'text-2xl font-bold text-red-500';
+                document.getElementById('feedback-explanation').innerHTML = `正解は「<b>${problem.answer}</b>」。<br>${problem.explanation}`;
+                document.getElementById('feedback-area').classList.remove('hidden');
+                feedbackIconContainer.innerHTML = `<i class="fas fa-times text-red-400 text-9xl opacity-50 feedback-icon"></i>`;
+            }
+        }
+        
+        setTimeout(() => { feedbackIconContainer.innerHTML = ''; }, 1000);
+    }
+
+    function nextQuestion() {
+        currentQuiz.currentProblemIndex++;
+        if (currentQuiz.currentProblemIndex < currentQuiz.problems.length) {
+            displayQuestion();
+        } else {
+            showResult();
+        }
+    }
+
+    function showResult() {
+        const total = currentQuiz.problems.length;
+        const score = currentQuiz.score;
+        const percentage = total > 0 ? (score / total) * 100 : 0;
+        document.getElementById('score').textContent = score;
+        document.getElementById('total-score').textContent = total;
+        document.getElementById('score-bar').style.width = `${percentage}%`;
+        let message = '';
+        if (percentage === 100) message = '素晴らしい！パーフェクトです！';
+        else if (percentage >= 80) message = 'すごい！よくできました！';
+        else if (percentage >= 60) message = '良い調子！このまま頑張ろう！';
+        else message = 'お疲れ様でした。復習を大切に！';
+        document.getElementById('result-message').textContent = message;
+
+        if (currentQuiz.mode === 'assignment' && currentQuiz.assignmentId) {
+            const assignment = assignments.find(a => a.id === currentQuiz.assignmentId);
+            if (assignment) assignment.completed = true;
+        }
+        showScreen('screen-result');
+    }
+
+    function goHome() {
+        initializeHome();
+        showScreen('screen-home');
+    }
+
+    // ===== スピーキングロジック (現状はダミー) =====
+    function startRecording() { /* 変更なし */ }
+
+    // ===== 初期化 (Initialization) =====
+    window.onload = () => {
+        goHome();
+    };
+    </script>
+</body>
+</html>
 
