@@ -33,15 +33,12 @@
             <p class="text-gray-500 mt-1">シンプルな単語帳で効率的に学習しよう</p>
         </header>
 
-        <!-- モード切替タブ -->
         <div class="flex justify-center bg-gray-200 rounded-lg p-1 mb-6">
             <button id="mode-register-btn" class="mode-button flex-1 py-2 px-4 rounded-md font-semibold transition-colors duration-300 active">単語登録</button>
             <button id="mode-review-btn" class="mode-button flex-1 py-2 px-4 rounded-md font-semibold transition-colors duration-300">復習モード</button>
         </div>
 
-        <!-- 単語登録モード -->
         <main id="register-mode" class="space-y-6">
-            <!-- 単語登録フォーム -->
             <section class="bg-white p-6 rounded-xl shadow-md">
                 <h2 class="text-xl font-bold mb-4">新しい単語を登録</h2>
                 <form id="word-form" class="space-y-4">
@@ -59,17 +56,14 @@
                 </form>
             </section>
 
-            <!-- 登録単語リスト -->
             <section class="bg-white p-6 rounded-xl shadow-md">
                 <h2 class="text-xl font-bold mb-4">登録済み単語リスト (<span id="word-count">0</span>)</h2>
                  <div id="loading-message" class="text-center text-gray-500">Firebaseに接続中...</div>
                 <div id="word-list" class="space-y-3 max-h-96 overflow-y-auto pr-2 hidden">
-                    <!-- JSで単語がここに追加されます -->
-                </div>
+                    </div>
             </section>
         </main>
 
-        <!-- 復習モード -->
         <main id="review-mode" class="hidden">
              <div id="quiz-container" class="bg-white p-6 md:p-8 rounded-xl shadow-md text-center">
                 <div id="quiz-start-view">
@@ -103,10 +97,9 @@
         </main>
     </div>
     
-    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, onSnapshot, deleteDoc, doc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -145,10 +138,17 @@
             let words = []; // ローカルの単語リスト
             let wordsCollectionRef; // Firestoreのコレクションへの参照
             
-            // NOTE: These variables are provided by the execution environment.
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            // ▼▼▼ ここから変更 ▼▼▼
+            // 提供されたFirebase設定情報を直接記述します
+            const firebaseConfig = {
+                apiKey: "AIzaSyAKVMfMHcvAbytTnAcWTOKBpo2LBxL9-uo",
+                authDomain: "tango-8565d.firebaseapp.com",
+                projectId: "tango-8565d",
+                storageBucket: "tango-8565d.appspot.com", // .firebasestorage.app から .appspot.com に修正
+                messagingSenderId: "908758208511",
+                appId: "1:908758208511:web:2eb019b24de258dba3a1ca"
+            };
+            // ▲▲▲ ここまで変更 ▲▲▲
 
             async function initializeFirebase() {
                 try {
@@ -156,17 +156,14 @@
                     db = getFirestore(app);
                     auth = getAuth(app);
                     
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
+                    await signInAnonymously(auth);
 
                     onAuthStateChanged(auth, user => {
                         if (user) {
                             console.log('Authenticated user:', user.uid);
                             const userId = user.uid;
-                            wordsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/words`);
+                            // Firestoreのパスを一般的な形式に修正
+                            wordsCollectionRef = collection(db, `users/${userId}/words`);
                             listenForWords();
                         } else {
                             console.log('User is not authenticated.');
@@ -494,4 +491,3 @@
     </script>
 </body>
 </html>
-
