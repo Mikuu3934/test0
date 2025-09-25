@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英単語帳アプリ（Firebase対応版）</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+        }
+        .mode-button.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+        .feedback-correct {
+            color: #10b981;
+        }
+        .feedback-incorrect {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 flex flex-col items-center min-h-screen p-4">
+
+    <div class="w-full max-w-2xl mx-auto">
+        <header class="text-center mb-6">
+            <h1 class="text-3xl md:text-4xl font-bold text-indigo-600">英単語帳</h1>
+            <p class="text-gray-500 mt-1">シンプルな単語帳で効率的に学習しよう</p>
+        </header>
+
+        <!-- モード切替タブ -->
+        <div class="flex justify-center bg-gray-200 rounded-lg p-1 mb-6">
+            <button id="mode-register-btn" class="mode-button flex-1 py-2 px-4 rounded-md font-semibold transition-colors duration-300 active">単語登録</button>
+            <button id="mode-review-btn" class="mode-button flex-1 py-2 px-4 rounded-md font-semibold transition-colors duration-300">復習モード</button>
+        </div>
+
+        <!-- 単語登録モード -->
+        <main id="register-mode" class="space-y-6">
+            <!-- 単語登録フォーム -->
+            <section class="bg-white p-6 rounded-xl shadow-md">
+                <h2 class="text-xl font-bold mb-4">新しい単語を登録</h2>
+                <form id="word-form" class="space-y-4">
+                    <div>
+                        <label for="english-word" class="block text-sm font-medium text-gray-700">英単語</label>
+                        <input type="text" id="english-word" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="e.g., apple">
+                    </div>
+                    <div>
+                        <label for="japanese-meaning" class="block text-sm font-medium text-gray-700">日本語の意味</label>
+                        <p class="text-xs text-gray-500 mb-1">英単語の入力後、自動で翻訳します。</p>
+                        <input type="text" id="japanese-meaning" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="e.g., りんご">
+                        <div id="translation-options" class="hidden mt-2 space-y-2 border border-gray-300 rounded-md p-2 bg-white max-h-40 overflow-y-auto"></div>
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-300">登録する</button>
+                </form>
+            </section>
+
+            <!-- 登録単語リスト -->
+            <section class="bg-white p-6 rounded-xl shadow-md">
+                <h2 class="text-xl font-bold mb-4">登録済み単語リスト (<span id="word-count">0</span>)</h2>
+                 <div id="loading-message" class="text-center text-gray-500">Firebaseに接続中...</div>
+                <div id="word-list" class="space-y-3 max-h-96 overflow-y-auto pr-2 hidden">
+                    <!-- JSで単語がここに追加されます -->
+                </div>
+            </section>
+        </main>
+
+        <!-- 復習モード -->
+        <main id="review-mode" class="hidden">
+             <div id="quiz-container" class="bg-white p-6 md:p-8 rounded-xl shadow-md text-center">
+                <div id="quiz-start-view">
+                    <h2 class="text-2xl font-bold mb-4">準備はいいですか？</h2>
+                    <p id="quiz-start-message" class="text-gray-600 mb-6">登録した単語から4択クイズを出題します。</p>
+                    <button id="start-quiz-btn" class="w-full bg-green-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-300 text-lg">復習を始める</button>
+                </div>
+                <div id="quiz-main-view" class="hidden">
+                    <p id="question-counter" class="text-sm text-gray-500 mb-2"></p>
+                    <p class="text-sm text-gray-500 mb-2">この単語の意味は？</p>
+                    <h3 id="quiz-word" class="text-4xl md:text-5xl font-bold mb-8"></h3>
+                    <div id="quiz-options" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"></div>
+                    <div id="feedback-container" class="h-10">
+                        <p id="feedback-message" class="text-lg font-semibold"></p>
+                    </div>
+                    <button id="next-quiz-btn" class="w-full mt-4 bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-300 hidden">次の問題へ</button>
+                </div>
+                <div id="quiz-results-view" class="hidden">
+                    <h2 class="text-2xl font-bold mb-4">クイズ結果</h2>
+                    <p id="final-score" class="text-3xl font-bold mb-6"></p>
+                    <div id="incorrect-words-container">
+                        <h3 class="text-xl font-bold mb-4">間違えた単語</h3>
+                        <div id="incorrect-words-list" class="space-y-2 text-left"></div>
+                    </div>
+                    <div class="mt-8 flex flex-col md:flex-row gap-4">
+                        <button id="retry-incorrect-btn" class="w-full bg-orange-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-300 text-lg hidden">間違えた問題だけ復習</button>
+                        <button id="restart-full-quiz-btn" class="w-full bg-green-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-300 text-lg">もう一度すべて挑戦</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, deleteDoc, doc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM要素の取得 ---
+            const modeRegisterBtn = document.getElementById('mode-register-btn');
+            const modeReviewBtn = document.getElementById('mode-review-btn');
+            const registerMode = document.getElementById('register-mode');
+            const reviewMode = document.getElementById('review-mode');
+            const wordForm = document.getElementById('word-form');
+            const englishWordInput = document.getElementById('english-word');
+            const japaneseMeaningInput = document.getElementById('japanese-meaning');
+            const wordList = document.getElementById('word-list');
+            const wordCount = document.getElementById('word-count');
+            const loadingMessage = document.getElementById('loading-message');
+            const translationOptions = document.getElementById('translation-options');
+            const quizStartView = document.getElementById('quiz-start-view');
+            const quizStartMessage = document.getElementById('quiz-start-message');
+            const startQuizBtn = document.getElementById('start-quiz-btn');
+            const quizMainView = document.getElementById('quiz-main-view');
+            const questionCounter = document.getElementById('question-counter');
+            const quizWord = document.getElementById('quiz-word');
+            const quizOptions = document.getElementById('quiz-options');
+            const feedbackContainer = document.getElementById('feedback-container');
+            const feedbackMessage = document.getElementById('feedback-message');
+            const nextQuizBtn = document.getElementById('next-quiz-btn');
+            const quizResultsView = document.getElementById('quiz-results-view');
+            const finalScore = document.getElementById('final-score');
+            const incorrectWordsContainer = document.getElementById('incorrect-words-container');
+            const incorrectWordsList = document.getElementById('incorrect-words-list');
+            const retryIncorrectBtn = document.getElementById('retry-incorrect-btn');
+            const restartFullQuizBtn = document.getElementById('restart-full-quiz-btn');
+
+
+            // --- Firebaseの初期化 ---
+            let db, auth;
+            let words = []; // ローカルの単語リスト
+            let wordsCollectionRef; // Firestoreのコレクションへの参照
+            
+            // NOTE: These variables are provided by the execution environment.
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+            async function initializeFirebase() {
+                try {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                    
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+
+                    onAuthStateChanged(auth, user => {
+                        if (user) {
+                            console.log('Authenticated user:', user.uid);
+                            const userId = user.uid;
+                            wordsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/words`);
+                            listenForWords();
+                        } else {
+                            console.log('User is not authenticated.');
+                             loadingMessage.textContent = '認証に失敗しました。ページをリロードしてください。';
+                        }
+                    });
+                } catch (error) {
+                    console.error("Firebase initialization failed:", error);
+                    loadingMessage.textContent = 'Firebaseへの接続に失敗しました。';
+                }
+            }
+            
+            function listenForWords() {
+                const q = query(wordsCollectionRef, orderBy('createdAt', 'desc'));
+                onSnapshot(q, (snapshot) => {
+                    words = [];
+                    snapshot.forEach(doc => {
+                        words.push({ id: doc.id, ...doc.data() });
+                    });
+                    renderWordList();
+                    loadingMessage.classList.add('hidden');
+                    wordList.classList.remove('hidden');
+                }, (error) => {
+                    console.error("Error listening for words: ", error);
+                    loadingMessage.textContent = '単語の読み込みに失敗しました。';
+                });
+            }
+
+            const renderWordList = () => {
+                wordList.innerHTML = '';
+                if (words.length === 0) {
+                    wordList.innerHTML = '<p class="text-gray-500 text-center">まだ単語が登録されていません。</p>';
+                } else {
+                    words.forEach((word) => {
+                        const wordItem = document.createElement('div');
+                        wordItem.className = 'flex justify-between items-center bg-gray-50 p-3 rounded-lg';
+                        wordItem.innerHTML = `
+                            <div>
+                                <p class="font-semibold">${word.english}</p>
+                                <p class="text-sm text-gray-600">${word.japanese}</p>
+                            </div>
+                            <button data-id="${word.id}" class="delete-btn text-red-500 hover:text-red-700 font-semibold text-xl">&times;</button>
+                        `;
+                        wordList.appendChild(wordItem);
+                    });
+                }
+                wordCount.textContent = words.length;
+            };
+
+             const switchMode = (mode) => {
+                if (mode === 'register') {
+                    registerMode.classList.remove('hidden');
+                    reviewMode.classList.add('hidden');
+                    modeRegisterBtn.classList.add('active');
+                    modeReviewBtn.classList.remove('active');
+                } else if (mode === 'review') {
+                    registerMode.classList.add('hidden');
+                    reviewMode.classList.remove('hidden');
+                    modeRegisterBtn.classList.remove('active');
+                    modeReviewBtn.classList.add('active');
+                    prepareQuiz();
+                }
+            };
+            modeRegisterBtn.addEventListener('click', () => switchMode('register'));
+            modeReviewBtn.addEventListener('click', () => switchMode('review'));
+
+            const translateEnglishWord = async () => {
+                 const englishText = englishWordInput.value.trim();
+                clearTranslationOptions();
+                if (!englishText) return;
+
+                const submitButton = wordForm.querySelector('button[type="submit"]');
+                const originalPlaceholder = japaneseMeaningInput.placeholder;
+
+                japaneseMeaningInput.value = '';
+                japaneseMeaningInput.placeholder = '翻訳中...';
+                japaneseMeaningInput.disabled = true;
+                submitButton.disabled = true;
+                submitButton.textContent = '翻訳中...';
+                submitButton.classList.add('bg-indigo-400', 'cursor-not-allowed');
+                submitButton.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+
+                try {
+                    const apiUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(englishText)}&langpair=en|ja`;
+                    const response = await fetch(apiUrl);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    
+                    const uniqueTranslations = [...new Set(data.matches.map(match => match.translation.replace(/<br\s*\/?>/gi, "")))];
+
+                    if (uniqueTranslations.length > 1) {
+                        uniqueTranslations.forEach(text => {
+                            const button = document.createElement('button');
+                            button.type = 'button';
+                            button.textContent = text;
+                            button.className = 'w-full text-left p-2 rounded-md bg-gray-100 hover:bg-indigo-100';
+                            translationOptions.appendChild(button);
+                        });
+                        translationOptions.classList.remove('hidden');
+                        japaneseMeaningInput.placeholder = '下の候補から意味を選択してください';
+                    } else if (uniqueTranslations.length === 1) {
+                        japaneseMeaningInput.value = uniqueTranslations[0];
+                    } else {
+                        japaneseMeaningInput.placeholder = '翻訳に失敗しました';
+                    }
+                } catch (error) {
+                    console.error("翻訳APIの呼び出しに失敗しました: ", error);
+                    japaneseMeaningInput.placeholder = '翻訳に失敗しました';
+                } finally {
+                    japaneseMeaningInput.disabled = false;
+                    japaneseMeaningInput.placeholder = originalPlaceholder;
+                    submitButton.disabled = false;
+                    submitButton.textContent = '登録する';
+                    submitButton.classList.remove('bg-indigo-400', 'cursor-not-allowed');
+                    submitButton.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                }
+            };
+
+            const clearTranslationOptions = () => {
+                translationOptions.innerHTML = '';
+                translationOptions.classList.add('hidden');
+            };
+
+            englishWordInput.addEventListener('input', clearTranslationOptions);
+            englishWordInput.addEventListener('blur', translateEnglishWord);
+            translationOptions.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    japaneseMeaningInput.value = e.target.textContent;
+                    clearTranslationOptions();
+                }
+            });
+            
+            wordForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const english = englishWordInput.value.trim();
+                const japanese = japaneseMeaningInput.value.trim();
+
+                if (english && japanese) {
+                    if (words.some(word => word.english.toLowerCase() === english.toLowerCase())) {
+                        alert('この単語はすでに登録されています。');
+                        return;
+                    }
+                    try {
+                        await addDoc(wordsCollectionRef, {
+                            english: english,
+                            japanese: japanese,
+                            createdAt: serverTimestamp()
+                        });
+                        wordForm.reset();
+                        englishWordInput.focus();
+                    } catch (error) {
+                        console.error("Error adding word: ", error);
+                        alert('単語の登録に失敗しました。');
+                    }
+                }
+            });
+
+            wordList.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('delete-btn')) {
+                    const docId = e.target.dataset.id;
+                    try {
+                        await deleteDoc(doc(db, wordsCollectionRef.path, docId));
+                    } catch (error) {
+                        console.error("Error deleting word: ", error);
+                        alert('単語の削除に失敗しました。');
+                    }
+                }
+            });
+            
+            // --- 復習モード機能 ---
+            let quizSessionWords = [];
+            let currentQuestionIndex = 0;
+            let score = 0;
+            let incorrectAnswers = [];
+
+            const prepareQuiz = () => {
+                quizMainView.classList.add('hidden');
+                quizResultsView.classList.add('hidden');
+                quizStartView.classList.remove('hidden');
+
+                if (words.length < 4) {
+                    quizStartMessage.textContent = `クイズを始めるには、単語を4つ以上登録してください。(現在 ${words.length}単語)`;
+                    startQuizBtn.disabled = true;
+                    startQuizBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                    startQuizBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                } else {
+                    quizStartMessage.textContent = `登録した ${words.length} 単語の中から最大10問のクイズを出題します。`;
+                    startQuizBtn.disabled = false;
+                    startQuizBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                    startQuizBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+                }
+            };
+            
+            startQuizBtn.addEventListener('click', () => {
+                const shuffledWords = [...words].sort(() => 0.5 - Math.random());
+                quizSessionWords = shuffledWords.slice(0, 10);
+                
+                currentQuestionIndex = 0;
+                score = 0;
+                incorrectAnswers = [];
+
+                quizStartView.classList.add('hidden');
+                quizResultsView.classList.add('hidden');
+                quizMainView.classList.remove('hidden');
+                
+                generateQuiz();
+            });
+
+             const generateQuiz = () => {
+                quizOptions.innerHTML = '';
+                feedbackMessage.textContent = '';
+                feedbackMessage.className = 'text-lg font-semibold';
+                nextQuizBtn.classList.add('hidden');
+
+                questionCounter.textContent = `第 ${currentQuestionIndex + 1} 問 / ${quizSessionWords.length} 問`;
+                
+                const correctWord = quizSessionWords[currentQuestionIndex];
+
+                const allOtherWords = words.filter(w => w.japanese !== correctWord.japanese);
+                allOtherWords.sort(() => Math.random() - 0.5);
+                const dummyMeanings = allOtherWords.slice(0, 3).map(w => w.japanese);
+
+                const options = [correctWord.japanese, ...dummyMeanings];
+                options.sort(() => Math.random() - 0.5);
+
+                quizWord.textContent = correctWord.english;
+                options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.textContent = option;
+                    button.className = 'option-btn bg-gray-100 p-4 rounded-lg hover:bg-indigo-100 transition-colors duration-200 text-lg';
+                    quizOptions.appendChild(button);
+                });
+            };
+
+            quizOptions.addEventListener('click', (e) => {
+                if (e.target.classList.contains('option-btn')) {
+                    document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+                    
+                    const selectedAnswer = e.target.textContent;
+                    const correctWord = quizSessionWords[currentQuestionIndex];
+                    const correctAnswer = correctWord.japanese;
+
+                    if (selectedAnswer === correctAnswer) {
+                        score++;
+                        feedbackMessage.textContent = '正解！ 🎉';
+                        feedbackMessage.classList.add('feedback-correct');
+                        e.target.classList.add('bg-green-500', 'text-white', 'border-green-500');
+                        e.target.classList.remove('bg-gray-100');
+                    } else {
+                        incorrectAnswers.push(correctWord);
+                        feedbackMessage.textContent = `不正解... 正解は「${correctAnswer}」`;
+                        feedbackMessage.classList.add('feedback-incorrect');
+                        e.target.classList.add('bg-red-500', 'text-white', 'border-red-500');
+                        e.target.classList.remove('bg-gray-100');
+                        
+                        document.querySelectorAll('.option-btn').forEach(btn => {
+                            if (btn.textContent === correctAnswer) {
+                                btn.classList.add('bg-green-500', 'text-white', 'border-green-500');
+                                btn.classList.remove('bg-gray-100');
+                            }
+                        });
+                    }
+                    nextQuizBtn.classList.remove('hidden');
+                }
+            });
+            
+            const displayResults = () => {
+                quizMainView.classList.add('hidden');
+                quizResultsView.classList.remove('hidden');
+
+                finalScore.textContent = `${score} / ${quizSessionWords.length} 正解`;
+                
+                incorrectWordsList.innerHTML = '';
+                if (incorrectAnswers.length === 0) {
+                    incorrectWordsContainer.classList.remove('hidden');
+                    retryIncorrectBtn.classList.add('hidden');
+                    incorrectWordsList.innerHTML = '<p class="text-green-600 font-semibold text-center">全問正解です！素晴らしい！ 🥳</p>';
+                } else {
+                    incorrectWordsContainer.classList.remove('hidden');
+                    retryIncorrectBtn.classList.remove('hidden');
+                    incorrectAnswers.forEach(word => {
+                        const wordItem = document.createElement('div');
+                        wordItem.className = 'flex justify-between items-center bg-red-50 p-3 rounded-lg';
+                        wordItem.innerHTML = `
+                            <div>
+                                <p class="font-semibold">${word.english}</p>
+                                <p class="text-sm text-gray-600">${word.japanese}</p>
+                            </div>
+                        `;
+                        incorrectWordsList.appendChild(wordItem);
+                    });
+                }
+            };
+            
+            nextQuizBtn.addEventListener('click', () => {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < quizSessionWords.length) {
+                    generateQuiz();
+                } else {
+                    displayResults();
+                }
+            });
+
+            restartFullQuizBtn.addEventListener('click', prepareQuiz);
+
+            retryIncorrectBtn.addEventListener('click', () => {
+                quizSessionWords = [...incorrectAnswers];
+                currentQuestionIndex = 0;
+                score = 0;
+                incorrectAnswers = [];
+
+                quizStartView.classList.add('hidden');
+                quizResultsView.classList.add('hidden');
+                quizMainView.classList.remove('hidden');
+                
+                generateQuiz();
+            });
+
+            // --- 初期化処理 ---
+            initializeFirebase();
+            switchMode('register');
+        });
+    </script>
+</body>
+</html>
+
