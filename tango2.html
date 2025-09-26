@@ -23,21 +23,6 @@
         .feedback-incorrect {
             color: #ef4444;
         }
-        /* スクロールバーのスタイル */
-        #word-list::-webkit-scrollbar {
-            width: 8px;
-        }
-        #word-list::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 10px;
-        }
-        #word-list::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
-        }
-        #word-list::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 flex flex-col items-center min-h-screen p-4">
@@ -48,15 +33,12 @@
             <p class="text-gray-500 mt-1">シンプルな単語帳で効率的に学習しよう</p>
         </header>
 
-        <!-- モード切替タブ -->
         <div class="flex justify-center bg-gray-200 rounded-lg p-1 mb-6">
             <button id="mode-register-btn" class="mode-button flex-1 py-2 px-4 rounded-md font-semibold transition-colors duration-300 active">単語登録</button>
             <button id="mode-review-btn" class="mode-button flex-1 py-2 px-4 rounded-md font-semibold transition-colors duration-300">復習モード</button>
         </div>
 
-        <!-- 単語登録モード -->
         <main id="register-mode" class="space-y-6">
-            <!-- 単語登録フォーム -->
             <section class="bg-white p-6 rounded-xl shadow-md">
                 <h2 class="text-xl font-bold mb-4">新しい単語を登録</h2>
                 <form id="word-form" class="space-y-4">
@@ -74,17 +56,14 @@
                 </form>
             </section>
 
-            <!-- 登録単語リスト -->
             <section class="bg-white p-6 rounded-xl shadow-md">
                 <h2 class="text-xl font-bold mb-4">登録済み単語リスト (<span id="word-count">0</span>)</h2>
                  <div id="loading-message" class="text-center text-gray-500">Firebaseに接続中...</div>
                 <div id="word-list" class="space-y-3 max-h-96 overflow-y-auto pr-2 hidden">
-                    <!-- JSで単語がここに追加されます -->
-                </div>
+                    </div>
             </section>
         </main>
 
-        <!-- 復習モード -->
         <main id="review-mode" class="hidden">
              <div id="quiz-container" class="bg-white p-6 md:p-8 rounded-xl shadow-md text-center">
                 <div id="quiz-start-view">
@@ -118,11 +97,10 @@
         </main>
     </div>
     
-    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, deleteDoc, doc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         document.addEventListener('DOMContentLoaded', () => {
             // --- DOM要素の取得 ---
@@ -154,40 +132,38 @@
             const retryIncorrectBtn = document.getElementById('retry-incorrect-btn');
             const restartFullQuizBtn = document.getElementById('restart-full-quiz-btn');
 
+
             // --- Firebaseの初期化 ---
             let db, auth;
             let words = []; // ローカルの単語リスト
             let wordsCollectionRef; // Firestoreのコレクションへの参照
             
-            // 環境変数からFirebase設定を読み込む
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            // ▼▼▼ ここから変更 ▼▼▼
+            // 提供されたFirebase設定情報を直接記述します
+            const firebaseConfig = {
+                apiKey: "AIzaSyAKVMfMHcvAbytTnAcWTOKBpo2LBxL9-uo",
+                authDomain: "tango-8565d.firebaseapp.com",
+                projectId: "tango-8565d",
+                storageBucket: "tango-8565d.appspot.com", // .firebasestorage.app から .appspot.com に修正
+                messagingSenderId: "908758208511",
+                appId: "1:908758208511:web:2eb019b24de258dba3a1ca"
+            };
+            // ▲▲▲ ここまで変更 ▲▲▲
 
             async function initializeFirebase() {
                 try {
-                    // FirebaseConfigが空の場合はエラーとする
-                    if (Object.keys(firebaseConfig).length === 0 && !initialAuthToken) {
-                        throw new Error("Firebase configuration is missing.");
-                    }
                     const app = initializeApp(firebaseConfig);
                     db = getFirestore(app);
                     auth = getAuth(app);
                     
-                    // 環境に合わせた認証方法の切り替え
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
+                    await signInAnonymously(auth);
 
-                    // 認証状態の変更を監視
                     onAuthStateChanged(auth, user => {
                         if (user) {
                             console.log('Authenticated user:', user.uid);
                             const userId = user.uid;
-                            // Firestoreのパスを実行環境に合わせた正しい形式に修正
-                            wordsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/words`);
+                            // Firestoreのパスを一般的な形式に修正
+                            wordsCollectionRef = collection(db, `users/${userId}/words`);
                             listenForWords();
                         } else {
                             console.log('User is not authenticated.');
@@ -196,35 +172,23 @@
                     });
                 } catch (error) {
                     console.error("Firebase initialization failed:", error);
-                    // より詳細なエラーメッセージを表示
-                    const errorMessage = `接続に失敗しました。ブラウザの設定やネットワーク環境をご確認ください。(エラー: ${error.code || '不明'})`;
-                    loadingMessage.textContent = errorMessage;
+                    loadingMessage.textContent = 'Firebaseへの接続に失敗しました。';
                 }
             }
             
             function listenForWords() {
-                // orderByをクエリから削除
-                const q = query(wordsCollectionRef);
+                const q = query(wordsCollectionRef, orderBy('createdAt', 'desc'));
                 onSnapshot(q, (snapshot) => {
                     words = [];
                     snapshot.forEach(doc => {
                         words.push({ id: doc.id, ...doc.data() });
                     });
-
-                    // クライアントサイドで作成日時の降順にソート
-                    words.sort((a, b) => {
-                        const timeA = a.createdAt ? a.createdAt.toMillis() : 0;
-                        const timeB = b.createdAt ? b.createdAt.toMillis() : 0;
-                        return timeB - timeA;
-                    });
-
                     renderWordList();
                     loadingMessage.classList.add('hidden');
                     wordList.classList.remove('hidden');
                 }, (error) => {
                     console.error("Error listening for words: ", error);
-                     // より詳細なエラーメッセージを表示
-                    loadingMessage.textContent = `単語の読み込みに失敗しました。(エラー: ${error.code || '不明'})`;
+                    loadingMessage.textContent = '単語の読み込みに失敗しました。';
                 });
             }
 
@@ -235,13 +199,13 @@
                 } else {
                     words.forEach((word) => {
                         const wordItem = document.createElement('div');
-                        wordItem.className = 'flex justify-between items-center bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors duration-200';
+                        wordItem.className = 'flex justify-between items-center bg-gray-50 p-3 rounded-lg';
                         wordItem.innerHTML = `
                             <div>
-                                <p class="font-semibold text-gray-900">${word.english}</p>
+                                <p class="font-semibold">${word.english}</p>
                                 <p class="text-sm text-gray-600">${word.japanese}</p>
                             </div>
-                            <button data-id="${word.id}" class="delete-btn text-gray-400 hover:text-red-600 font-bold text-2xl transition-colors duration-200 leading-none pb-1">&times;</button>
+                            <button data-id="${word.id}" class="delete-btn text-red-500 hover:text-red-700 font-semibold text-xl">&times;</button>
                         `;
                         wordList.appendChild(wordItem);
                     });
@@ -305,7 +269,7 @@
                     } else if (uniqueTranslations.length === 1) {
                         japaneseMeaningInput.value = uniqueTranslations[0];
                     } else {
-                        japaneseMeaningInput.placeholder = '翻訳結果が見つかりませんでした';
+                        japaneseMeaningInput.placeholder = '翻訳に失敗しました';
                     }
                 } catch (error) {
                     console.error("翻訳APIの呼び出しに失敗しました: ", error);
@@ -448,18 +412,18 @@
                         score++;
                         feedbackMessage.textContent = '正解！ 🎉';
                         feedbackMessage.classList.add('feedback-correct');
-                        e.target.classList.add('!bg-green-500', 'text-white', 'border-green-500');
+                        e.target.classList.add('bg-green-500', 'text-white', 'border-green-500');
                         e.target.classList.remove('bg-gray-100');
                     } else {
                         incorrectAnswers.push(correctWord);
                         feedbackMessage.textContent = `不正解... 正解は「${correctAnswer}」`;
                         feedbackMessage.classList.add('feedback-incorrect');
-                        e.target.classList.add('!bg-red-500', 'text-white', 'border-red-500');
+                        e.target.classList.add('bg-red-500', 'text-white', 'border-red-500');
                         e.target.classList.remove('bg-gray-100');
                         
                         document.querySelectorAll('.option-btn').forEach(btn => {
                             if (btn.textContent === correctAnswer) {
-                                btn.classList.add('!bg-green-500', 'text-white', 'border-green-500');
+                                btn.classList.add('bg-green-500', 'text-white', 'border-green-500');
                                 btn.classList.remove('bg-gray-100');
                             }
                         });
@@ -527,4 +491,3 @@
     </script>
 </body>
 </html>
-
