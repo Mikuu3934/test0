@@ -186,8 +186,8 @@
                         if (user) {
                             console.log('Authenticated user:', user.uid);
                             const userId = user.uid;
-                            // Firestoreのパスを標準的な形式に修正
-                            wordsCollectionRef = collection(db, `users/${userId}/words`);
+                            // Firestoreのパスを実行環境に合わせた正しい形式に修正
+                            wordsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/words`);
                             listenForWords();
                         } else {
                             console.log('User is not authenticated.');
