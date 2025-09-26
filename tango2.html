@@ -122,7 +122,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, deleteDoc, doc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         document.addEventListener('DOMContentLoaded', () => {
             // --- DOM要素の取得 ---
@@ -159,22 +159,17 @@
             let words = []; // ローカルの単語リスト
             let wordsCollectionRef; // Firestoreのコレクションへの参照
             
-            // ▼▼▼ ここから変更 ▼▼▼
-            // 環境変数からFirebase設定を読み込むように修正
+            // 環境変数からFirebase設定を読み込む
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-                // フォールバック用の設定（エラーの原因となった静的設定）
-                apiKey: "AIzaSyAKVMfMHcvAbytTnAcWTOKBpo2LBxL9-uo",
-                authDomain: "tango-8565d.firebaseapp.com",
-                projectId: "tango-8565d",
-                storageBucket: "tango-8565d.appspot.com",
-                messagingSenderId: "908758208511",
-                appId: "1:908758208511:web:2eb019b24de258dba3a1ca"
-            };
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
             const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
             async function initializeFirebase() {
                 try {
+                    // FirebaseConfigが空の場合はエラーとする
+                    if (Object.keys(firebaseConfig).length === 0 && !initialAuthToken) {
+                        throw new Error("Firebase configuration is missing.");
+                    }
                     const app = initializeApp(firebaseConfig);
                     db = getFirestore(app);
                     auth = getAuth(app);
@@ -191,8 +186,8 @@
                         if (user) {
                             console.log('Authenticated user:', user.uid);
                             const userId = user.uid;
-                            // Firestoreのパスを環境変数に合わせて動的に設定
-                            wordsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/words`);
+                            // Firestoreのパスを標準的な形式に修正
+                            wordsCollectionRef = collection(db, `users/${userId}/words`);
                             listenForWords();
                         } else {
                             console.log('User is not authenticated.');
@@ -201,13 +196,14 @@
                     });
                 } catch (error) {
                     console.error("Firebase initialization failed:", error);
-                    loadingMessage.textContent = 'Firebaseへの接続に失敗しました。';
+                    // より詳細なエラーメッセージを表示
+                    const errorMessage = `接続に失敗しました。ブラウザの設定やネットワーク環境をご確認ください。(エラー: ${error.code || '不明'})`;
+                    loadingMessage.textContent = errorMessage;
                 }
             }
-            // ▲▲▲ ここまで変更 ▲▲▲
             
             function listenForWords() {
-                // orderByをクエリから削除し、クライアントサイドでソートするように変更
+                // orderByをクエリから削除
                 const q = query(wordsCollectionRef);
                 onSnapshot(q, (snapshot) => {
                     words = [];
@@ -215,7 +211,7 @@
                         words.push({ id: doc.id, ...doc.data() });
                     });
 
-                    // 取得したデータをクライアントサイドで作成日時の降順にソート
+                    // クライアントサイドで作成日時の降順にソート
                     words.sort((a, b) => {
                         const timeA = a.createdAt ? a.createdAt.toMillis() : 0;
                         const timeB = b.createdAt ? b.createdAt.toMillis() : 0;
@@ -227,7 +223,8 @@
                     wordList.classList.remove('hidden');
                 }, (error) => {
                     console.error("Error listening for words: ", error);
-                    loadingMessage.textContent = '単語の読み込みに失敗しました。';
+                     // より詳細なエラーメッセージを表示
+                    loadingMessage.textContent = `単語の読み込みに失敗しました。(エラー: ${error.code || '不明'})`;
                 });
             }
 
