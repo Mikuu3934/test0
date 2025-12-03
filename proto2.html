@@ -1,413 +1,746 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>英語学習アプリ | プロトタイプ</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* カスタムスタイル */
-        body {
-            font-family: 'Helvetica Neue', 'Arial', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Meiryo', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        #app-container {
-            padding-bottom: 80px; /* ボトムナビゲーションの高さ分 */
-        }
-        .screen { display: none; }
-        .screen.active { display: block; }
-        .btn-press { transition: transform 0.1s ease; }
-        .btn-press:active { transform: scale(0.95); }
-        @keyframes feedback-anim {
-            0% { transform: scale(0.5); opacity: 0; }
-            50% { transform: scale(1.2); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .feedback-icon { animation: feedback-anim 0.5s ease-out forwards; }
-        .xp-gain-anim {
-            animation: xp-gain-float 1.5s ease-out forwards;
-        }
-        @keyframes xp-gain-float {
-            0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-40px); opacity: 0; }
-        }
-        .calendar-day.learned { background-color: #90cdf4; color: white; border-radius: 9999px; }
-        .calendar-day.today { border: 2px solid #4299e1; border-radius: 9999px; }
-        
-        /* ボトムナビゲーション */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            max-width: 32rem; /* max-w-lg */
-            margin: 0 auto;
-            z-index: 20;
-        }
-        .nav-btn.active {
-            color: #3b82f6; /* text-blue-500 */
-        }
-    </style>
-</head>
-<body class="bg-slate-100">
+import React, { useState, useEffect } from 'react';
+import { 
+  BookOpen, 
+  Mic, 
+  Trophy, 
+  Home, 
+  XCircle, 
+  CheckCircle, 
+  Volume2, 
+  Star,
+  Settings,
+  TrendingUp,
+  Award,
+  User,
+  PlusCircle,
+  PenTool,
+  Briefcase,
+  Zap,
+  Lightbulb,
+  Send,
+  Inbox,
+  Sparkles,
+  Loader2,
+  Trash2
+} from 'lucide-react';
 
-    <div id="app-container" class="max-w-lg mx-auto bg-white min-h-screen shadow-lg relative">
+// ==========================================
+// 1. Mock AI Generator Logic (擬似AIエンジン)
+// ==========================================
+// 入力された単語や文法をもとに問題を生成するシミュレーション
+const mockGenerateProblems = (vocabInput, grammarInput) => {
+  // 入力された単語をリスト化（カンマや改行で区切る）
+  const vocabList = vocabInput.split(/[,、\n]+/).map(w => w.trim()).filter(w => w.length > 0);
+  const grammarTopic = grammarInput.trim();
 
-        <!-- ===== 共通ヘッダー (Player Stats) ===== -->
-        <header id="player-stats-header" class="p-4 bg-slate-800 text-white sticky top-0 z-10">
-            <div class="flex justify-between items-center">
-                <div class="font-bold">Lv. <span id="player-level">1</span></div>
-                <div class="flex-grow mx-4">
-                    <div class="w-full bg-slate-600 rounded-full h-4">
-                        <div id="player-xp-bar" class="bg-yellow-400 h-4 rounded-full text-right pr-2 text-xs text-slate-800 font-bold" style="width: 10%;">XP</div>
-                    </div>
-                </div>
-                <div class="text-sm"><span id="player-xp">10</span> / <span id="xp-to-next-level">100</span></div>
+  let generated = [];
+
+  // 1. 文法問題の生成（入力があれば）
+  if (grammarTopic) {
+    // 実際にはAIが文法項目を解析して生成しますが、ここでは汎用的なテンプレートを使用
+    const grammarTemplates = [
+      { q: `She _____ (study) English hard yesterday. [Theme: ${grammarTopic}]`, a: 'studied', o: ['studied', 'studies', 'study', 'studying'], e: `${grammarTopic}のルールに従って動詞を変化させます。` },
+      { q: `This is the book _____ I bought. [Theme: ${grammarTopic}]`, a: 'which', o: ['which', 'who', 'where', 'when'], e: `${grammarTopic}を用いた表現です。` },
+      { q: `If I _____ you, I would go there. [Theme: ${grammarTopic}]`, a: 'were', o: ['were', 'was', 'am', 'be'], e: `${grammarTopic}の重要表現です。` }
+    ];
+    // ランダムに1つ選んで少し加工
+    const t = grammarTemplates[Math.floor(Math.random() * grammarTemplates.length)];
+    generated.push({
+      id: `ai-g-${Date.now()}`,
+      question: t.q.replace('[Theme: ' + grammarTopic + ']', ''), // 表示用にタグ消去
+      options: t.o,
+      answer: t.a,
+      explanation: `【AI解説】「${grammarTopic}」のポイント: ${t.e}`,
+      sentence: t.q.split('[')[0],
+      category: 'grammar',
+      isAiGenerated: true
+    });
+  }
+
+  // 2. 単語問題の生成（入力された単語を使用）
+  if (vocabList.length > 0) {
+    // 最大3問まで生成
+    const targetWords = vocabList.slice(0, 3);
+    
+    targetWords.forEach((word, idx) => {
+      // ダミーの選択肢プール
+      const dummyOptions = ['extraordinary', 'curious', 'potential', 'efficient', 'challenging', 'maintain', 'admire'].filter(w => w !== word);
+      const shuffledDummies = dummyOptions.sort(() => 0.5 - Math.random()).slice(0, 3);
+      const options = [word, ...shuffledDummies].sort(() => 0.5 - Math.random());
+
+      generated.push({
+        id: `ai-v-${Date.now()}-${idx}`,
+        question: `Select the word that matches the textbook definition for: "${word.toUpperCase()}"`, // 簡易的な問い
+        options: options,
+        answer: word,
+        explanation: `【AI解説】教科書重要単語「${word}」の意味と用法を確認しましょう。`,
+        sentence: `This represents ${word}.`,
+        category: 'vocabulary',
+        isAiGenerated: true
+      });
+    });
+  }
+
+  // 入力が空の場合のフォールバック
+  if (generated.length === 0) {
+    generated = [
+      { id: `ai-fb-1`, question: 'What is the opposite of "increase"?', answer: 'decrease', options: ['decrease', 'produce', 'expand', 'extend'], explanation: '教科書の基本語彙を確認しましょう。', category: 'vocabulary', isAiGenerated: true, sentence: 'Prices might decrease.' },
+      { id: `ai-fb-2`, question: 'He (   ) playing tennis now.', answer: 'is', options: ['is', 'are', 'does', 'do'], explanation: '基本的な時制の問題です。', category: 'grammar', isAiGenerated: true, sentence: 'He is playing tennis now.' }
+    ];
+  }
+
+  return generated;
+};
+
+// ==========================================
+// 2. ユーティリティ & レベル計算
+// ==========================================
+
+const getLevelInfo = (totalXp) => {
+  let level = 1;
+  let requiredXpForNextLevel = 100;
+  let accumulatedXpForCurrentLevel = 0;
+  while (totalXp >= accumulatedXpForCurrentLevel + requiredXpForNextLevel) {
+    accumulatedXpForCurrentLevel += requiredXpForNextLevel;
+    level++;
+    requiredXpForNextLevel = level * 100;
+  }
+  const currentLevelXp = totalXp - accumulatedXpForCurrentLevel;
+  const progress = Math.min(100, (currentLevelXp / requiredXpForNextLevel) * 100);
+  return { level, currentLevelXp, requiredXpForNextLevel, progress };
+};
+
+const playAudio = (text) => {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-US';
+  utterance.rate = 0.9;
+  window.speechSynthesis.speak(utterance);
+};
+
+// ==========================================
+// 3. コンポーネント
+// ==========================================
+
+// --- ホーム画面 ---
+const HomeScreen = ({ userStats, assignments, onStartAssignment, onStartSelfStudy, onGoToSpeaking, onGoToCreate }) => {
+  const levelInfo = getLevelInfo(userStats.xp);
+
+  return (
+    <div className="space-y-6 pb-20">
+      <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 opacity-10"><Trophy size={140} /></div>
+        <div className="relative z-10">
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <p className="text-indigo-100 text-sm font-bold tracking-wider mb-1">CURRENT LEVEL</p>
+              <h1 className="text-5xl font-extrabold text-white flex items-baseline">{levelInfo.level}<span className="text-lg ml-2 font-normal text-indigo-200">Student</span></h1>
             </div>
-        </header>
+            <div className="bg-white/20 px-3 py-1 rounded-full flex items-center backdrop-blur-sm"><TrendingUp size={16} className="mr-1 text-yellow-300" /><span className="font-bold">{userStats.streak} Day Streak</span></div>
+          </div>
+          <div className="mt-6">
+            <div className="flex justify-between text-xs font-bold text-indigo-200 mb-2"><span>{levelInfo.currentLevelXp} XP</span><span>Next Lv: {levelInfo.requiredXpForNextLevel - levelInfo.currentLevelXp} XP needed</span></div>
+            <div className="w-full bg-black/20 rounded-full h-3 overflow-hidden backdrop-blur-sm border border-white/10"><div className="bg-gradient-to-r from-yellow-400 to-orange-500 h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(251,191,36,0.5)]" style={{ width: `${levelInfo.progress}%` }}></div></div>
+          </div>
+        </div>
+      </div>
 
-        <!-- ===== ホーム画面 (Home Screen) ===== -->
-        <div id="screen-home" class="screen active p-6">
-            <section id="daily-challenge-section" class="mb-8">
-                <h2 class="text-xl font-bold text-slate-700 mb-3 flex items-center"><i class="fas fa-star text-yellow-400 mr-2"></i>デイリーチャレンジ</h2>
-                <div id="daily-challenge-card" class="bg-yellow-100 border-l-4 border-yellow-400 text-yellow-800 p-4 rounded-md shadow"></div>
-            </section>
-            <section id="assignments-section" class="mb-8">
-                <h2 class="text-xl font-bold text-slate-700 mb-3 flex items-center"><i class="fas fa-clipboard-list text-red-500 mr-2"></i>先生からの課題</h2>
-                <div id="assignments-list" class="space-y-3"></div>
-            </section>
-            <section id="self-study-section" class="mt-10">
-                <h2 class="text-xl font-bold text-slate-700 mb-4 border-b-2 border-green-500 pb-2">自己学習メニュー</h2>
-                <div class="grid grid-cols-1 gap-4">
-                    <button onclick="startSelfStudy('vocabulary')" class="btn-press bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-4 rounded-lg shadow-md flex items-center justify-center text-lg"><i class="fas fa-book mr-3"></i> 単語トレーニング</button>
-                    <button onclick="startSelfStudy('grammar')" class="btn-press bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-4 rounded-lg shadow-md flex items-center justify-center text-lg"><i class="fas fa-pen-ruler mr-3"></i> 文法トレーニング</button>
-                    <button onclick="showScreen('screen-speaking')" class="btn-press bg-purple-500 hover:bg-purple-600 text-white font-bold py-4 px-4 rounded-lg shadow-md flex items-center justify-center text-lg"><i class="fas fa-microphone-alt mr-3"></i> スピーキング練習</button>
-                </div>
-            </section>
-        </div>
-        
-        <!-- ===== 学習カレンダー画面 (Calendar Screen) ===== -->
-        <div id="screen-calendar" class="screen p-6">
-            <header class="flex items-center mb-6">
-                <h1 class="text-2xl font-bold text-slate-800">学習カレンダー</h1>
-            </header>
-            <div id="calendar-grid" class="grid grid-cols-7 gap-2 text-center">
-                <!-- JSでカレンダーが生成されます -->
-            </div>
-        </div>
+      <button onClick={onGoToCreate} className="w-full bg-white p-4 rounded-xl shadow-md border-2 border-indigo-100 flex items-center justify-between hover:border-indigo-300 hover:bg-indigo-50 transition-all group">
+        <div className="flex items-center space-x-4"><div className="bg-indigo-100 text-indigo-600 p-3 rounded-full group-hover:scale-110 transition-transform"><Lightbulb size={24} /></div><div className="text-left"><h3 className="font-bold text-slate-800">問題を作ってXPゲット！</h3><p className="text-xs text-slate-500">あなたの作った問題が採用されるかも？</p></div></div>
+        <div className="bg-yellow-400 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">+50 XP</div>
+      </button>
 
-        <!-- ===== 学習グループ画面 (Group Screen) ===== -->
-        <div id="screen-group" class="screen p-6">
-            <header class="flex items-center mb-6">
-                <h1 class="text-2xl font-bold text-slate-800">学習グループ</h1>
-            </header>
-            <div id="group-feed" class="bg-slate-50 p-3 rounded-lg h-96 overflow-y-auto space-y-3">
-                <!-- JSでグループの活動が挿入されます -->
-            </div>
+      <section>
+        <div className="flex justify-between items-center mb-3 px-1"><h2 className="text-lg font-bold text-slate-800 flex items-center"><Briefcase size={20} className="mr-2 text-blue-500" />先生からの課題</h2>{assignments.length > 0 && <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full font-bold">{assignments.filter(a => !a.completed).length} New</span>}</div>
+        <div className="space-y-3">
+          {assignments.length === 0 ? (
+            <div className="p-8 text-center bg-slate-100 rounded-xl border-2 border-dashed border-slate-200 text-slate-400"><Briefcase size={40} className="mx-auto mb-2 opacity-50" /><p className="font-bold">課題はありません</p></div>
+          ) : (
+            assignments.map(assignment => (
+              <div key={assignment.id} className={`bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center transition-all active:scale-[0.98] ${assignment.completed ? 'opacity-60 bg-slate-50' : ''}`}>
+                <div className="flex items-start space-x-3"><div className={`p-3 rounded-xl ${assignment.category === 'Grammar' ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>{assignment.category === 'Grammar' ? <BookOpen size={20} /> : <Star size={20} />}</div><div><h3 className="font-bold text-slate-800 text-sm">{assignment.title}</h3><div className="flex items-center space-x-2 mt-1"><span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-500 rounded font-bold">{assignment.xp} XP</span><span className="text-xs text-slate-400">{assignment.problems.length} Questions</span></div></div></div>
+                {assignment.completed ? <div className="flex items-center text-green-600 font-bold text-sm bg-green-50 px-3 py-1 rounded-full"><CheckCircle size={16} className="mr-1" /> Done</div> : <button onClick={() => onStartAssignment(assignment)} className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">Start</button>}
+              </div>
+            ))
+          )}
         </div>
+      </section>
 
-        <!-- ===== クイズ画面 (Quiz Screen) ===== -->
-        <div id="screen-quiz" class="screen p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 id="quiz-title" class="text-2xl font-bold text-slate-800"></h2>
-                <p class="text-slate-500 font-semibold"><span id="current-q-num">1</span> / <span id="total-q-num">10</span></p>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-2.5 mb-6"><div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 10%"></div></div>
-            <div id="question-area" class="mb-6 text-center"><p id="question-text" class="text-2xl md:text-3xl font-bold text-slate-800 bg-slate-100 p-8 rounded-lg"></p></div>
-            <div id="options-area" class="grid grid-cols-1 gap-4"></div>
-            <div id="hint-area" class="mt-6 text-center hidden"><div class="p-4 rounded-lg bg-orange-100 border-l-4 border-orange-400"><h3 class="font-bold text-orange-700">ヒント</h3><p id="hint-text" class="mt-2 text-orange-600"></p></div><button id="retry-btn" onclick="retryQuestion()" class="btn-press mt-4 w-full bg-orange-500 text-white font-bold py-3 px-4 rounded-lg shadow-md text-lg">もう一度回答する</button></div>
-            <div id="feedback-area" class="mt-6 text-center hidden"><div id="feedback-result" class="p-4 rounded-lg"><h3 id="feedback-title" class="text-2xl font-bold"></h3><p id="feedback-explanation" class="mt-2 text-slate-600"></p></div><button id="next-btn" onclick="nextQuestion()" class="btn-press mt-4 w-full bg-gray-800 text-white font-bold py-3 px-4 rounded-lg shadow-md text-lg">次へ</button></div>
-            <div id="feedback-icon-container" class="fixed inset-0 flex items-center justify-center pointer-events-none"></div>
-            <div id="xp-gain-container" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none text-2xl font-bold text-yellow-500"></div>
+      <section>
+        <h2 className="text-lg font-bold text-slate-800 mb-3 px-1 flex items-center"><Zap size={20} className="mr-2 text-yellow-500" />自己学習</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <button onClick={() => onStartSelfStudy('vocabulary')} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-left hover:border-orange-200 hover:shadow-md transition-all group"><div className="bg-orange-100 w-12 h-12 rounded-2xl flex items-center justify-center text-orange-600 mb-3 group-hover:scale-110 transition-transform shadow-inner"><Star size={24} /></div><h3 className="font-bold text-slate-700">単語</h3><p className="text-xs text-slate-500 mt-1">語彙力を強化</p></button>
+          <button onClick={() => onStartSelfStudy('grammar')} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-left hover:border-green-200 hover:shadow-md transition-all group"><div className="bg-green-100 w-12 h-12 rounded-2xl flex items-center justify-center text-green-600 mb-3 group-hover:scale-110 transition-transform shadow-inner"><BookOpen size={24} /></div><h3 className="font-bold text-slate-700">文法</h3><p className="text-xs text-slate-500 mt-1">ルールを習得</p></button>
+          <button onClick={onGoToSpeaking} className="col-span-2 bg-gradient-to-r from-purple-600 to-pink-500 p-5 rounded-2xl shadow-lg text-white text-left relative overflow-hidden group hover:shadow-xl transition-all"><div className="relative z-10 flex items-center justify-between"><div><h3 className="font-bold text-xl">スピーキング練習</h3><p className="text-xs text-purple-100 mt-1">AI発音判定付き</p></div><div className="bg-white/20 p-3 rounded-full group-hover:bg-white/30 transition-colors backdrop-blur-sm"><Mic size={24} /></div></div></button>
         </div>
-        
-        <!-- ===== スピーキング画面 (Speaking Screen) ===== -->
-        <div id="screen-speaking" class="screen p-6">
-            <header class="flex items-center mb-6"><button onclick="showScreen('screen-home')" class="text-slate-500 mr-4"><i class="fas fa-chevron-left fa-lg"></i></button><h1 class="text-3xl font-bold text-slate-800">スピーキング練習</h1></header>
-            <div class="bg-slate-100 p-4 rounded-lg"><h3 class="font-bold text-slate-700 mb-2">シチュエーション：道案内</h3><div id="dialogue-area" class="space-y-4"><div class="flex"><div class="w-10 h-10 rounded-full bg-orange-400 flex items-center justify-center text-white font-bold mr-3 flex-shrink-0">AI</div><div class="bg-white p-3 rounded-lg rounded-tl-none shadow">Excuse me, how can I get to the station?</div></div><div class="flex flex-row-reverse"><div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold ml-3 flex-shrink-0">You</div><div id="user-speech-bubble" class="bg-blue-100 p-3 rounded-lg rounded-tr-none shadow"><p class="text-slate-500 italic">"Go straight and turn left." と言ってみよう</p></div></div></div><div id="speaking-feedback" class="text-center mt-4 h-8"></div></div>
-            <div class="text-center mt-8"><button id="mic-btn" onclick="startRecording()" class="btn-press bg-red-500 text-white rounded-full w-20 h-20 flex items-center justify-center shadow-lg text-3xl"><i class="fas fa-microphone-alt"></i></button><p id="mic-status" class="mt-2 text-slate-500">タップして開始</p></div>
-        </div>
-
-        <!-- ===== 結果画面 (Result Screen) ===== -->
-        <div id="screen-result" class="screen p-8 text-center">
-            <h1 class="text-4xl font-bold text-slate-800 mb-4">結果発表</h1>
-            <div class="bg-slate-100 p-6 rounded-lg shadow-inner"><p class="text-lg text-slate-600">正解数</p><p class="text-6xl font-bold text-blue-600 my-2"><span id="score">8</span> / <span id="total-score">10</span></p><div class="w-full bg-gray-200 rounded-full h-4 my-4"><div id="score-bar" class="bg-blue-600 h-4 rounded-full" style="width: 80%"></div></div><p id="result-message" class="text-xl font-semibold text-slate-700 mt-4"></p></div>
-            <button onclick="showScreen('screen-home')" class="btn-press mt-8 w-full bg-gray-800 text-white font-bold py-4 px-4 rounded-lg shadow-md text-lg">ホームに戻る</button>
-        </div>
-        
-        <!-- ===== ボトムナビゲーション (Bottom Navigation) ===== -->
-        <footer class="bottom-nav bg-white border-t border-slate-200">
-            <div class="flex justify-around">
-                <button id="nav-home" onclick="showScreen('screen-home')" class="nav-btn flex-1 text-center py-3 text-slate-500">
-                    <i class="fas fa-home fa-lg"></i>
-                    <span class="block text-xs">ホーム</span>
-                </button>
-                <button id="nav-calendar" onclick="showScreen('screen-calendar')" class="nav-btn flex-1 text-center py-3 text-slate-500">
-                    <i class="fas fa-calendar-alt fa-lg"></i>
-                    <span class="block text-xs">カレンダー</span>
-                </button>
-                <button id="nav-group" onclick="showScreen('screen-group')" class="nav-btn flex-1 text-center py-3 text-slate-500">
-                    <i class="fas fa-users fa-lg"></i>
-                    <span class="block text-xs">グループ</span>
-                </button>
-            </div>
-        </footer>
-
+      </section>
     </div>
+  );
+};
 
-    <script>
-    // ===== データ定義 (Data Definitions) =====
-    const vocabularyProblems = [ { id: 'v1', level: 1, question: 'implement', options: ['実行する', '輸入する', '評価する', '予測する'], answer: '実行する', explanation: 'implementは「（計画などを）実行する、実施する」という意味の動詞です。', hint: '「計画を実行に移す」のような文脈で使われる動詞だよ。' }, { id: 'v2', level: 1, question: 'significant', options: ['些細な', '重要な', '複雑な', '伝統的な'], answer: '重要な', explanation: 'significantは「重要な、かなりの」という意味の形容詞です。', hint: 'importantと似た意味を持つ単語だよ。' }, { id: 'v3', level: 2, question: 'consequence', options: ['原因', '過程', '結果', '例外'], answer: '結果', explanation: 'consequenceは「（必然的な）結果、影響」という意味の名詞です。', hint: '「行動の結果」のように、何かの後で起こることだよ。' }, { id: 'v4', level: 2, question: 'approve', options: ['反対する', '無視する', '提案する', '承認する'], answer: '承認する', explanation: 'approveは「～を承認する、賛成する」という意味の動詞です。', hint: '親が子供の計画に「OK」を出すようなイメージだよ。' }, { id: 'v5', level: 3, question: 'negotiate', options: ['交渉する', '発表する', '拒否する', '投資する'], answer: '交渉する', explanation: 'negotiateは「交渉する」という意味の動詞です。', hint: '国と国が話し合って何かを決めるときに使う言葉だよ。' } ];
-    const grammarProblems = [ { id: 'g1', level: 1, question: 'He is taller (   ) me.', options: ['as', 'than', 'of', 'from'], answer: 'than', explanation: '比較級では、比較対象の前にthanを置きます。', hint: '「～よりも」という意味を表す単語を選ぼう。' }, { id: 'g2', level: 1, question: 'I have (   ) to Paris twice.', options: ['go', 'went', 'gone', 'been'], answer: 'been', explanation: '「～へ行ったことがある」という経験を表す現在完了形は have been to を使います。', hint: '「経験」を表す現在完了形の特別な形だよ。' }, { id: 'g3', level: 2, question: 'This is the book (   ) I bought yesterday.', options: ['who', 'which', 'where', 'when'], answer: 'which', explanation: '先行詞が「モノ」の場合、目的格の関係代名詞whichまたはthatを使います。', hint: '先行詞の "the book" は人？それともモノ？' }, { id: 'g4', level: 2, question: 'You should (   ) listening to the teacher.', options: ['is', 'are', 'be', 'to be'], answer: 'be', explanation: '助動詞 (should) の後は動詞の原形がきます。進行形なのでbe listeningとなります。', hint: 'shouldのような助動詞の後の動詞はどんな形になるかな？' }, { id: 'g5', level: 3, question: 'If I (   ) a bird, I could fly.', options: ['am', 'was', 'were', 'be'], answer: 'were', explanation: '現在の事実とは異なることを仮定する仮定法過去では、be動詞は主語に関わらずwereを使います。', hint: '「もし～だったらなあ」という現実とは違う話（仮定法）をするときのbe動詞は特別だよ。' } ];
-    let assignments = [ { id: 'a1', title: 'Unit 5 まとめ', problems: ['v1', 'v3', 'g2'], completed: false }, { id: 'a2', title: '比較級の復習', problems: ['g1', 'g5'], completed: false }, { id: 'a3', title: '重要動詞チェック', problems: ['v1', 'v4', 'v5'], completed: true } ];
-    const learningGroup = { name: "チーム・チャレンジャーズ", members: ["あなた", "佐藤さん", "鈴木さん"], feed: [ { user: "鈴木さん", action: "「比較級の復習」をクリア！", time: "3時間前" }, { user: "佐藤さん", "action": "レベル3にアップ！", time: "8時間前" }, { user: "あなた", "action": "「Unit 5 まとめ」をクリア！", time: "昨日" }, { user: "鈴木さん", action: "デイリーチャレンジ達成！", time: "昨日"}, { user: "佐藤さん", "action": "単語トレーニングを実施", time: "2日前"} ] };
+// --- 生徒用問題作成画面 ---
+const StudentCreateScreen = ({ onExit, onSubmitProblem }) => {
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState('');
+  const [wrong1, setWrong1] = useState('');
+  const [wrong2, setWrong2] = useState('');
+  const [wrong3, setWrong3] = useState('');
+  const [category, setCategory] = useState('vocabulary');
 
-    // ===== アプリケーションの状態管理 (State Management) =====
-    let playerState = { level: 1, xp: 0, xpForNextLevel: 100, learnedDays: [2, 5, 6, 10, 14], dailyChallenge: { description: "単語問題を3問解こう！", targetCount: 3, currentCount: 0, completed: false, reward: 50 } };
-    let currentQuiz = { problems: [], currentProblemIndex: 0, score: 0, mode: '', isRetry: false };
-
-    // ===== 画面遷移 (Screen Navigation) =====
-    const screens = document.querySelectorAll('.screen');
-    const navBtns = document.querySelectorAll('.nav-btn');
-    function showScreen(screenId) {
-        screens.forEach(screen => screen.classList.toggle('active', screen.id === screenId));
-        navBtns.forEach(btn => btn.classList.toggle('active', `nav-${screenId.split('-')[1]}` === btn.id));
-        
-        // 画面表示時に内容をレンダリング
-        if (screenId === 'screen-home') initializeHome();
-        if (screenId === 'screen-calendar') renderCalendar();
-        if (screenId === 'screen-group') renderGroupFeed();
-    }
-
-    // ===== ホーム画面の初期化 (Home Screen Initialization) =====
-    function initializeHome() {
-        renderPlayerStats();
-        renderDailyChallenge();
-        renderAssignments();
-    }
-    
-    // ===== ゲーミフィケーション要素の描画 =====
-    function renderPlayerStats() {
-        document.getElementById('player-level').textContent = playerState.level;
-        document.getElementById('player-xp').textContent = playerState.xp;
-        document.getElementById('xp-to-next-level').textContent = playerState.xpForNextLevel;
-        const xpPercentage = (playerState.xp / playerState.xpForNextLevel) * 100;
-        document.getElementById('player-xp-bar').style.width = `${xpPercentage}%`;
-    }
-
-    function addXp(amount) {
-        playerState.xp += amount;
-        const xpContainer = document.getElementById('xp-gain-container');
-        xpContainer.innerHTML = `<span class="xp-gain-anim">+${amount} XP</span>`;
-        setTimeout(() => { xpContainer.innerHTML = ''; }, 1500);
-        if (playerState.xp >= playerState.xpForNextLevel) {
-            playerState.level++;
-            playerState.xp -= playerState.xpForNextLevel;
-            playerState.xpForNextLevel = Math.floor(playerState.xpForNextLevel * 1.5);
-        }
-        renderPlayerStats();
-    }
-
-    function renderDailyChallenge() {
-        const card = document.getElementById('daily-challenge-card');
-        const challenge = playerState.dailyChallenge;
-        if (challenge.completed) {
-            card.innerHTML = `<p class="font-bold"><i class="fas fa-check-circle text-green-500"></i> 今日のチャレンジ達成！</p><p>よく頑張りました！</p>`;
-            card.classList.remove('bg-yellow-100', 'border-yellow-400', 'text-yellow-800');
-            card.classList.add('bg-green-100', 'border-green-400', 'text-green-800');
-        } else {
-            card.innerHTML = `<p class="font-bold">${challenge.description} (${challenge.currentCount}/${challenge.targetCount})</p><p>達成で ${challenge.reward}XP ゲット！</p>`;
-        }
-    }
-
-    function completeDailyChallenge(type) {
-        const challenge = playerState.dailyChallenge;
-        if (challenge.completed) return;
-        if ((type === 'vocabulary' && challenge.description.includes('単語')) || (type === 'grammar' && challenge.description.includes('文法'))) {
-            challenge.currentCount++;
-        }
-        if (challenge.currentCount >= challenge.targetCount) {
-            challenge.completed = true;
-            addXp(challenge.reward);
-        }
-        renderDailyChallenge();
-    }
-
-    function renderCalendar() {
-        const grid = document.getElementById('calendar-grid');
-        grid.innerHTML = '';
-        const today = new Date().getDate();
-        const daysInMonth = 30; // Simulating a month
-        const dayHeaders = ['日', '月', '火', '水', '木', '金', '土'];
-        dayHeaders.forEach(day => {
-            const dayEl = document.createElement('div');
-            dayEl.className = 'font-bold text-slate-500 text-sm';
-            dayEl.textContent = day;
-            grid.appendChild(dayEl);
-        });
-        for (let i = 1; i <= daysInMonth; i++) {
-            const dayEl = document.createElement('div');
-            dayEl.className = 'calendar-day p-2';
-            dayEl.textContent = i;
-            if (playerState.learnedDays.includes(i)) dayEl.classList.add('learned');
-            if (i === today) dayEl.classList.add('today');
-            grid.appendChild(dayEl);
-        }
-    }
-
-    function renderGroupFeed() {
-        const feed = document.getElementById('group-feed');
-        feed.innerHTML = '';
-        learningGroup.feed.forEach(item => {
-            const feedItem = document.createElement('div');
-            feedItem.className = 'text-sm text-slate-700 bg-white p-3 rounded-md shadow-sm';
-            feedItem.innerHTML = `<i class="fas fa-check-circle text-green-500 mr-2"></i><b>${item.user}</b>が${item.action} <span class="text-xs text-slate-400 float-right">${item.time}</span>`;
-            feed.appendChild(feedItem);
-        });
-    }
-    
-    function renderAssignments() {
-        const list = document.getElementById('assignments-list');
-        list.innerHTML = '';
-        if (assignments.filter(a => !a.completed).length === 0) {
-            list.innerHTML = '<p class="text-slate-500 p-3 bg-slate-50 rounded-md">未完了の課題はありません。</p>';
-            return;
-        }
-        assignments.forEach(assignment => {
-            if (assignment.completed) return;
-            const card = document.createElement('div');
-            card.className = `p-3 rounded-lg shadow-sm flex justify-between items-center bg-white`;
-            card.innerHTML = `<div><h3 class="font-bold text-slate-800">${assignment.title}</h3><p class="text-sm text-slate-500">${assignment.problems.length}問</p></div><button onclick="startAssignment('${assignment.id}')" class="btn-press bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md">挑戦する</button>`;
-            list.appendChild(card);
-        });
-    }
-
-    // ===== クイズロジック (Quiz Logic) =====
-    function startQuiz(mode, problems, assignmentId = null) {
-        currentQuiz.mode = mode;
-        currentQuiz.problems = problems;
-        currentQuiz.currentProblemIndex = 0;
-        currentQuiz.score = 0;
-        currentQuiz.assignmentId = assignmentId;
-        document.getElementById('quiz-title').textContent = mode === 'vocabulary' ? '単語トレーニング' : (mode === 'grammar' ? '文法トレーニング' : `課題: ${assignments.find(a=>a.id === assignmentId).title}`);
-        document.getElementById('total-q-num').textContent = problems.length;
-        displayQuestion();
-        showScreen('screen-quiz');
-    }
-    
-    function startSelfStudy(mode) {
-        const problemSet = mode === 'vocabulary' ? vocabularyProblems : grammarProblems;
-        const suitableProblems = problemSet.filter(p => p.level >= playerState.level -1 && p.level <= playerState.level + 1);
-        const problems = suitableProblems.sort(() => Math.random() - 0.5).slice(0, 5);
-        startQuiz(mode, problems);
-    }
-    
-    function startAssignment(assignmentId) {
-        const assignment = assignments.find(a => a.id === assignmentId);
-        if (!assignment) return;
-        const problems = assignment.problems.map(id => vocabularyProblems.find(p => p.id === id) || grammarProblems.find(p => p.id === id)).filter(p => p);
-        startQuiz('assignment', problems, assignmentId);
-    }
-
-    function displayQuestion() {
-        document.getElementById('feedback-area').classList.add('hidden');
-        document.getElementById('hint-area').classList.add('hidden');
-        document.getElementById('options-area').innerHTML = '';
-        currentQuiz.isRetry = false;
-        const problem = currentQuiz.problems[currentQuiz.currentProblemIndex];
-        document.getElementById('question-text').textContent = problem.question;
-        document.getElementById('current-q-num').textContent = currentQuiz.currentProblemIndex + 1;
-        const progress = ((currentQuiz.currentProblemIndex + 1) / currentQuiz.problems.length) * 100;
-        document.getElementById('progress-bar').style.width = `${progress}%`;
-        const shuffledOptions = [...problem.options].sort(() => Math.random() - 0.5);
-        shuffledOptions.forEach(option => {
-            const button = document.createElement('button');
-            button.className = 'btn-press w-full bg-white hover:bg-slate-200 border-2 border-slate-300 text-slate-700 font-semibold py-3 px-4 rounded-lg shadow-sm';
-            button.textContent = option;
-            button.onclick = () => selectAnswer(option);
-            document.getElementById('options-area').appendChild(button);
-        });
-    }
-    
-    function retryQuestion() {
-        document.getElementById('hint-area').classList.add('hidden');
-        const optionButtons = document.querySelectorAll('#options-area button');
-        optionButtons.forEach(btn => {
-            btn.disabled = false;
-            btn.className = 'btn-press w-full bg-white hover:bg-slate-200 border-2 border-slate-300 text-slate-700 font-semibold py-3 px-4 rounded-lg shadow-sm';
-        });
-    }
-
-    function selectAnswer(selectedOption) {
-        const optionButtons = document.querySelectorAll('#options-area button');
-        optionButtons.forEach(btn => btn.disabled = true);
-        const problem = currentQuiz.problems[currentQuiz.currentProblemIndex];
-        const isCorrect = selectedOption === problem.answer;
-        const feedbackIconContainer = document.getElementById('feedback-icon-container');
-        feedbackIconContainer.innerHTML = '';
-        if (isCorrect) {
-            if (!currentQuiz.isRetry) addXp(20); else addXp(10);
-            if (currentQuiz.mode !== 'assignment') completeDailyChallenge(currentQuiz.mode);
-            currentQuiz.score++;
-            document.getElementById('feedback-title').textContent = '正解！';
-            document.getElementById('feedback-title').className = 'text-2xl font-bold text-green-500';
-            document.getElementById('feedback-explanation').innerHTML = `正解は「<b>${problem.answer}</b>」。<br>${problem.explanation}`;
-            document.getElementById('feedback-area').classList.remove('hidden');
-            feedbackIconContainer.innerHTML = `<i class="fas fa-circle text-green-400 text-9xl opacity-50 feedback-icon"></i>`;
-        } else {
-            if (!currentQuiz.isRetry) {
-                currentQuiz.isRetry = true;
-                document.getElementById('hint-text').textContent = problem.hint;
-                document.getElementById('hint-area').classList.remove('hidden');
-            } else {
-                document.getElementById('feedback-title').textContent = '不正解...';
-                document.getElementById('feedback-title').className = 'text-2xl font-bold text-red-500';
-                document.getElementById('feedback-explanation').innerHTML = `正解は「<b>${problem.answer}</b>」。<br>${problem.explanation}`;
-                document.getElementById('feedback-area').classList.remove('hidden');
-                feedbackIconContainer.innerHTML = `<i class="fas fa-times text-red-400 text-9xl opacity-50 feedback-icon"></i>`;
-            }
-        }
-        setTimeout(() => { feedbackIconContainer.innerHTML = ''; }, 1000);
-    }
-
-    function nextQuestion() {
-        currentQuiz.currentProblemIndex++;
-        if (currentQuiz.currentProblemIndex < currentQuiz.problems.length) {
-            displayQuestion();
-        } else {
-            showResult();
-        }
-    }
-
-    function showResult() {
-        const total = currentQuiz.problems.length;
-        const score = currentQuiz.score;
-        const percentage = total > 0 ? (score / total) * 100 : 0;
-        document.getElementById('score').textContent = score;
-        document.getElementById('total-score').textContent = total;
-        document.getElementById('score-bar').style.width = `${percentage}%`;
-        let message = '';
-        if (percentage === 100) message = '素晴らしい！パーフェクトです！';
-        else if (percentage >= 80) message = 'すごい！よくできました！';
-        else if (percentage >= 60) message = '良い調子！このまま頑張ろう！';
-        else message = 'お疲れ様でした。復習を大切に！';
-        document.getElementById('result-message').textContent = message;
-        if (currentQuiz.mode === 'assignment' && currentQuiz.assignmentId) {
-            const assignment = assignments.find(a => a.id === currentQuiz.assignmentId);
-            if (assignment) assignment.completed = true;
-        }
-        showScreen('screen-result');
-    }
-
-    // ===== スピーキングロジック (現状はダミー) =====
-    function startRecording() { /* 変更なし */ }
-
-    // ===== 初期化 (Initialization) =====
-    window.onload = () => {
-        showScreen('screen-home');
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const newProblem = {
+      id: `student-${Date.now()}`,
+      question,
+      options: [answer, wrong1, wrong2, wrong3],
+      answer,
+      explanation: 'Student created problem',
+      sentence: question,
+      category,
+      author: 'Student'
     };
-    </script>
-</body>
-</html>
+    onSubmitProblem(newProblem);
+  };
+
+  return (
+    <div className="h-full flex flex-col pb-6 bg-indigo-50">
+      <div className="bg-indigo-600 text-white p-4 flex items-center space-x-3 shadow-md"><button onClick={onExit}><XCircle size={24} /></button><h2 className="font-bold text-lg">クイズを作ろう！</h2></div>
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-indigo-100 mb-6 text-center"><Lightbulb size={48} className="mx-auto text-yellow-400 mb-2" /><h3 className="font-bold text-indigo-900 text-lg">あなたの知識をテストに！</h3><p className="text-sm text-slate-500">問題を作ると<span className="font-bold text-orange-500">50XP</span>もらえます。<br/>先生が採用すると、みんなの課題になります。</p></div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="bg-white p-4 rounded-xl shadow-sm"><label className="block text-sm font-bold text-slate-700 mb-2">何の問題？</label><div className="flex space-x-2"><button type="button" onClick={() => setCategory('vocabulary')} className={`flex-1 py-2 rounded-lg text-sm font-bold border-2 ${category === 'vocabulary' ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-slate-100 text-slate-400'}`}>単語</button><button type="button" onClick={() => setCategory('grammar')} className={`flex-1 py-2 rounded-lg text-sm font-bold border-2 ${category === 'grammar' ? 'border-green-500 bg-green-50 text-green-600' : 'border-slate-100 text-slate-400'}`}>文法</button></div></div>
+          <div className="bg-white p-4 rounded-xl shadow-sm space-y-3">
+            <div><label className="block text-xs font-bold text-slate-500 mb-1">問題文 (英語)</label><input required type="text" value={question} onChange={e => setQuestion(e.target.value)} placeholder="例: Apple" className="w-full p-3 bg-slate-50 border rounded-lg" /></div>
+            <div><label className="block text-xs font-bold text-green-600 mb-1">正解</label><input required type="text" value={answer} onChange={e => setAnswer(e.target.value)} placeholder="例: りんご" className="w-full p-3 bg-green-50 border border-green-200 rounded-lg" /></div>
+            <div><label className="block text-xs font-bold text-slate-500 mb-1">不正解の選択肢 (3つ)</label><input required type="text" value={wrong1} onChange={e => setWrong1(e.target.value)} placeholder="選択肢 1" className="w-full p-2 bg-slate-50 border rounded-lg mb-2" /><input required type="text" value={wrong2} onChange={e => setWrong2(e.target.value)} placeholder="選択肢 2" className="w-full p-2 bg-slate-50 border rounded-lg mb-2" /><input required type="text" value={wrong3} onChange={e => setWrong3(e.target.value)} placeholder="選択肢 3" className="w-full p-2 bg-slate-50 border rounded-lg" /></div>
+          </div>
+          <button type="submit" className="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 flex items-center justify-center space-x-2"><Send size={20} /><span>先生に提出する (+50XP)</span></button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// --- 教師画面 (AI生成機能改修版) ---
+const TeacherScreen = ({ onExit, onAddProblem, onCreateAssignment, vocabCount, grammarCount, submissions, onApproveSubmission, onRejectSubmission }) => {
+  const [activeTab, setActiveTab] = useState('ai'); 
+  const [notification, setNotification] = useState('');
+
+  // AI生成用入力ステート
+  const [vocabInput, setVocabInput] = useState('');
+  const [grammarInput, setGrammarInput] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedProblems, setGeneratedProblems] = useState([]);
+
+  // 手動追加用ステート
+  const [problemType, setProblemType] = useState('vocabulary');
+  const [question, setQuestion] = useState('');
+  const [option1, setOption1] = useState('');
+  const [option2, setOption2] = useState('');
+  const [option3, setOption3] = useState('');
+  const [option4, setOption4] = useState('');
+  const [correctOptionIndex, setCorrectOptionIndex] = useState(0);
+  const [explanation, setExplanation] = useState('');
+  
+  // 課題作成用ステート
+  const [assignmentTitle, setAssignmentTitle] = useState('');
+  const [assignmentCategory, setAssignmentCategory] = useState('Vocabulary');
+
+  const showNotification = (msg) => {
+    setNotification(msg);
+    setTimeout(() => setNotification(''), 3000);
+  };
+
+  // AI生成ハンドラー
+  const handleGenerate = () => {
+    if (!vocabInput && !grammarInput) {
+      alert("単語または文法を入力してください");
+      return;
+    }
+    setIsGenerating(true);
+    setTimeout(() => {
+      const problems = mockGenerateProblems(vocabInput, grammarInput);
+      setGeneratedProblems(problems);
+      setIsGenerating(false);
+    }, 1500);
+  };
+
+  const handleApproveGenerated = (problem) => {
+    onAddProblem(problem.category, problem);
+    setGeneratedProblems(prev => prev.filter(p => p.id !== problem.id));
+    showNotification('AI生成問題を採用しました');
+  };
+
+  const handleDiscardGenerated = (id) => {
+    setGeneratedProblems(prev => prev.filter(p => p.id !== id));
+  };
+
+  // 手動追加ハンドラー
+  const handleAddProblem = (e) => {
+    e.preventDefault();
+    const options = [option1, option2, option3, option4];
+    onAddProblem(problemType, {
+      id: Date.now().toString(),
+      question,
+      options,
+      answer: options[correctOptionIndex],
+      explanation,
+      sentence: question
+    });
+    setQuestion(''); setOption1(''); setOption2(''); setOption3(''); setOption4(''); setExplanation('');
+    showNotification('問題を追加しました！');
+  };
+
+  const handleCreateAssignment = (e) => {
+    e.preventDefault();
+    onCreateAssignment(assignmentTitle, assignmentCategory);
+    setAssignmentTitle('');
+    showNotification('課題を配信しました！');
+  };
+
+  return (
+    <div className="h-full flex flex-col pb-6 bg-slate-50">
+      <div className="bg-slate-800 text-white p-4 flex items-center justify-between shadow-md z-10">
+        <div className="flex items-center space-x-2"><PenTool size={20} /><h2 className="font-bold text-lg">教師モード</h2></div>
+        <button onClick={onExit} className="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg text-xs font-bold transition-colors">生徒モードへ</button>
+      </div>
+
+      <div className="flex bg-white shadow-sm mb-4 overflow-x-auto no-scrollbar">
+        <button onClick={() => setActiveTab('ai')} className={`flex-1 min-w-[90px] py-3 text-xs font-bold flex flex-col items-center justify-center space-y-1 border-b-2 ${activeTab === 'ai' ? 'border-purple-500 text-purple-600 bg-purple-50' : 'border-transparent text-slate-400'}`}>
+          <Sparkles size={18} /><span>AI生成</span>
+        </button>
+        <button onClick={() => setActiveTab('review')} className={`flex-1 min-w-[90px] py-3 text-xs font-bold flex flex-col items-center justify-center space-y-1 border-b-2 ${activeTab === 'review' ? 'border-pink-500 text-pink-600 bg-pink-50' : 'border-transparent text-slate-400'}`}>
+          <div className="relative"><Inbox size={18} />{submissions.length > 0 && <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full">{submissions.length}</span>}</div><span>投稿確認</span>
+        </button>
+        <button onClick={() => setActiveTab('add_problem')} className={`flex-1 min-w-[90px] py-3 text-xs font-bold flex flex-col items-center justify-center space-y-1 border-b-2 ${activeTab === 'add_problem' ? 'border-blue-500 text-blue-600 bg-blue-50' : 'border-transparent text-slate-400'}`}>
+          <PlusCircle size={18} /><span>手動追加</span>
+        </button>
+        <button onClick={() => setActiveTab('create_assignment')} className={`flex-1 min-w-[90px] py-3 text-xs font-bold flex flex-col items-center justify-center space-y-1 border-b-2 ${activeTab === 'create_assignment' ? 'border-green-500 text-green-600 bg-green-50' : 'border-transparent text-slate-400'}`}>
+          <Briefcase size={18} /><span>課題配信</span>
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 pb-20">
+        {notification && <div className="mb-4 bg-green-100 text-green-700 px-4 py-3 rounded-lg flex items-center shadow-sm animate-fade-in border border-green-200"><CheckCircle size={18} className="mr-2" />{notification}</div>}
+
+        {/* --- AI生成タブ (教科書準拠モード) --- */}
+        {activeTab === 'ai' && (
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-purple-100">
+              <div className="flex items-center space-x-2 mb-4 text-purple-700">
+                <Sparkles size={24} />
+                <h3 className="font-bold text-lg">AI問題作成アシスタント</h3>
+              </div>
+              <p className="text-sm text-slate-500 mb-4">教科書の重要語句や文法を入力してください。AIが練習問題を作成します。</p>
+              
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-xs font-bold text-purple-700 mb-1">重要単語 (カンマ区切り)</label>
+                  <textarea 
+                    value={vocabInput}
+                    onChange={(e) => setVocabInput(e.target.value)}
+                    placeholder="例: sustainable, efficiency, innovation"
+                    className="w-full p-3 bg-slate-50 border border-purple-100 rounded-lg focus:ring-2 focus:ring-purple-200 outline-none text-sm"
+                    rows="2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-purple-700 mb-1">重要文法</label>
+                  <textarea 
+                    value={grammarInput}
+                    onChange={(e) => setGrammarInput(e.target.value)}
+                    placeholder="例: 現在完了形, 仮定法過去"
+                    className="w-full p-3 bg-slate-50 border border-purple-100 rounded-lg focus:ring-2 focus:ring-purple-200 outline-none text-sm"
+                    rows="2"
+                  />
+                </div>
+              </div>
+
+              <button 
+                onClick={handleGenerate} 
+                disabled={isGenerating}
+                className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-2"
+              >
+                {isGenerating ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
+                <span>{isGenerating ? '教科書に沿って生成...' : '問題を生成する'}</span>
+              </button>
+            </div>
+
+            {generatedProblems.length > 0 && (
+              <div className="space-y-3 animate-slide-up">
+                <h4 className="font-bold text-slate-700 px-1">生成された問題 ({generatedProblems.length})</h4>
+                {generatedProblems.map(problem => (
+                  <div key={problem.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-[10px] font-bold bg-purple-100 text-purple-600 px-2 py-0.5 rounded uppercase">{problem.category}</span>
+                    </div>
+                    <h5 className="font-bold text-lg text-slate-800 mb-1">{problem.question}</h5>
+                    <p className="text-sm text-green-600 font-bold mb-2">A: {problem.answer}</p>
+                    <div className="bg-slate-50 p-2 rounded text-xs text-slate-500 mb-3">{problem.explanation}</div>
+                    
+                    <div className="flex space-x-2">
+                      <button onClick={() => handleApproveGenerated(problem)} className="flex-1 bg-purple-600 text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center"><CheckCircle size={14} className="mr-1"/> 採用</button>
+                      <button onClick={() => handleDiscardGenerated(problem.id)} className="px-3 bg-slate-100 text-slate-400 rounded-lg flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* --- 投稿確認タブ --- */}
+        {activeTab === 'review' && (
+          <div className="space-y-4">
+            {submissions.length === 0 ? (
+              <div className="text-center py-10 text-slate-400"><Inbox size={48} className="mx-auto mb-2 opacity-30" /><p>生徒からの投稿はありません</p></div>
+            ) : (
+              submissions.map((sub) => (
+                <div key={sub.id} className="bg-white p-4 rounded-xl shadow-sm border border-pink-100 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 bg-pink-500 text-white text-[10px] px-2 py-1 rounded-br-lg font-bold">New!</div>
+                  <div className="mt-4"><span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{sub.category}</span><h3 className="font-bold text-lg text-slate-800">{sub.question}</h3><div className="mt-2 space-y-1"><p className="text-sm bg-green-50 text-green-700 px-2 py-1 rounded border border-green-100 flex items-center"><CheckCircle size={12} className="mr-1"/> {sub.answer}</p>{sub.options.filter(o => o !== sub.answer).map((opt, i) => (<p key={i} className="text-sm text-slate-500 px-2">・{opt}</p>))}</div></div>
+                  <div className="flex space-x-2 mt-4"><button onClick={() => { onApproveSubmission(sub); showNotification('採用しました！'); }} className="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold text-sm shadow-md hover:bg-green-700">採用する</button><button onClick={() => { onRejectSubmission(sub.id); showNotification('却下しました'); }} className="flex-1 bg-slate-200 text-slate-600 py-2 rounded-lg font-bold text-sm hover:bg-slate-300">見送る</button></div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* --- 手動追加タブ --- */}
+        {activeTab === 'add_problem' && (
+          <form onSubmit={handleAddProblem} className="space-y-4">
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100"><label className="block text-sm font-bold text-slate-700 mb-2">カテゴリー</label><div className="flex space-x-2"><button type="button" onClick={() => setProblemType('vocabulary')} className={`flex-1 py-2 rounded-lg text-sm font-bold border-2 ${problemType === 'vocabulary' ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-slate-100 text-slate-400'}`}>単語 ({vocabCount})</button><button type="button" onClick={() => setProblemType('grammar')} className={`flex-1 py-2 rounded-lg text-sm font-bold border-2 ${problemType === 'grammar' ? 'border-green-500 bg-green-50 text-green-700' : 'border-slate-100 text-slate-400'}`}>文法 ({grammarCount})</button></div></div>
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-4">
+              <div><label className="block text-sm font-bold text-slate-700 mb-1">問題文</label><input type="text" value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="例: Apple" className="w-full p-3 bg-slate-50 border rounded-lg" required /></div>
+              <div><label className="block text-sm font-bold text-slate-700 mb-2">選択肢 (ラジオボタンで正解を選択)</label><div className="space-y-2">{[option1, option2, option3, option4].map((opt, idx) => (<div key={idx} className="flex items-center space-x-2"><input type="radio" name="correctOption" checked={correctOptionIndex === idx} onChange={() => setCorrectOptionIndex(idx)} className="w-5 h-5 text-blue-600" /><input type="text" value={idx === 0 ? option1 : idx === 1 ? option2 : idx === 2 ? option3 : option4} onChange={(e) => { const val = e.target.value; if(idx===0) setOption1(val); else if(idx===1) setOption2(val); else if(idx===2) setOption3(val); else setOption4(val); }} placeholder={`選択肢 ${idx + 1}`} className="flex-1 p-2 bg-slate-50 border rounded-lg" required /></div>))}</div></div>
+              <div><label className="block text-sm font-bold text-slate-700 mb-1">解説</label><textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} className="w-full p-3 bg-slate-50 border rounded-lg" rows="2" required /></div>
+            </div>
+            <button type="submit" className="w-full py-4 bg-blue-600 text-white font-bold rounded-xl shadow-lg">追加する</button>
+          </form>
+        )}
+
+        {/* --- 課題配信タブ --- */}
+        {activeTab === 'create_assignment' && (
+          <form onSubmit={handleCreateAssignment} className="space-y-4">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 text-center">
+              <h3 className="font-bold text-slate-800 mb-4">課題配信</h3>
+              <div className="text-left space-y-4">
+                <div><label className="block text-sm font-bold text-slate-700 mb-1">タイトル</label><input type="text" value={assignmentTitle} onChange={(e) => setAssignmentTitle(e.target.value)} className="w-full p-3 bg-slate-50 border rounded-lg" required /></div>
+                <div><label className="block text-sm font-bold text-slate-700 mb-2">カテゴリー</label><select value={assignmentCategory} onChange={(e) => setAssignmentCategory(e.target.value)} className="w-full p-3 bg-slate-50 border rounded-lg"><option value="Vocabulary">単語 ({vocabCount}問)</option><option value="Grammar">文法 ({grammarCount}問)</option></select></div>
+              </div>
+              <button type="submit" disabled={assignmentCategory === 'Vocabulary' ? vocabCount === 0 : grammarCount === 0} className={`w-full mt-6 py-4 font-bold rounded-xl shadow-lg text-white ${ (assignmentCategory === 'Vocabulary' ? vocabCount === 0 : grammarCount === 0) ? 'bg-gray-300' : 'bg-green-600' }`}>配信する</button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// --- クイズ画面 ---
+const QuizScreen = ({ quizData, onComplete, onExit }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [isAnswered, setIsAnswered] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
+  const [score, setScore] = useState(0);
+  const [options, setOptions] = useState([]);
+
+  if (!quizData || quizData.length === 0) return null;
+
+  const currentProblem = quizData[currentIndex];
+
+  useEffect(() => {
+    if (!currentProblem) return;
+    const shuffled = [...currentProblem.options].sort(() => Math.random() - 0.5);
+    setOptions(shuffled);
+    if (currentProblem.sentence || /^[a-zA-Z\s]+$/.test(currentProblem.question)) {
+      playAudio(currentProblem.sentence || currentProblem.question);
+    }
+  }, [currentIndex, currentProblem]);
+
+  const handleAnswer = (option) => {
+    if (isAnswered) return;
+    setSelectedOption(option);
+    setIsAnswered(true);
+    const correct = option === currentProblem.answer;
+    setIsCorrect(correct);
+    if (correct) setScore(s => s + 1);
+  };
+
+  const handleNext = () => {
+    if (currentIndex < quizData.length - 1) {
+      setCurrentIndex(prev => prev + 1);
+      setSelectedOption(null);
+      setIsAnswered(false);
+      setIsCorrect(false);
+    } else {
+      onComplete(score, quizData.length);
+    }
+  };
+
+  const progress = ((currentIndex + 1) / quizData.length) * 100;
+
+  return (
+    <div className="h-full flex flex-col pb-6">
+      <div className="flex items-center justify-between mb-4">
+        <button onClick={onExit}><XCircle size={24} className="text-slate-400" /></button>
+        <div className="flex-1 mx-4 bg-gray-200 h-2 rounded-full"><div className="bg-blue-600 h-2 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} /></div>
+        <span className="text-sm font-bold text-slate-500">{currentIndex + 1}/{quizData.length}</span>
+      </div>
+      <div className="flex-1 flex flex-col justify-center mb-8 text-center">
+        <h2 className="text-3xl font-bold text-slate-800 mb-4">{currentProblem.question}</h2>
+        <button onClick={() => playAudio(currentProblem.sentence || currentProblem.question)} className="inline-flex items-center justify-center text-blue-500 bg-blue-50 px-3 py-1 rounded-full text-sm font-bold"><Volume2 size={16} className="mr-2" />Listen</button>
+      </div>
+      <div className="space-y-3 mb-6">
+        {options.map((option, idx) => {
+          let btnClass = "w-full p-4 rounded-xl text-lg font-bold border-2 transition-all shadow-sm ";
+          if (isAnswered) {
+            if (option === currentProblem.answer) btnClass += "bg-green-100 border-green-500 text-green-700";
+            else if (option === selectedOption) btnClass += "bg-red-100 border-red-500 text-red-700";
+            else btnClass += "bg-white border-slate-200 text-slate-400 opacity-50";
+          } else {
+            btnClass += "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-blue-300";
+          }
+          return <button key={idx} onClick={() => handleAnswer(option)} disabled={isAnswered} className={btnClass}>{option}</button>;
+        })}
+      </div>
+      {isAnswered && (
+        <div className={`fixed bottom-0 left-0 right-0 p-6 rounded-t-3xl shadow-2xl border-t z-50 animate-slide-up ${isCorrect ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
+          <div className="max-w-lg mx-auto">
+            <div className="flex items-center mb-2">
+              {isCorrect ? <CheckCircle className="text-green-600 mr-2" size={28} /> : <XCircle className="text-red-600 mr-2" size={28} />}
+              <h3 className={`text-xl font-bold ${isCorrect ? 'text-green-800' : 'text-red-800'}`}>{isCorrect ? 'Excellent!' : 'Correct Answer:'}</h3>
+            </div>
+            {!isCorrect && <p className="text-slate-800 font-bold mb-2 ml-9">{currentProblem.answer}</p>}
+            <div className="bg-white/60 p-3 rounded-lg ml-9 mb-4"><p className="text-sm text-slate-600">{currentProblem.explanation}</p></div>
+            <button onClick={handleNext} className={`w-full py-4 rounded-xl font-bold text-white shadow-lg text-lg ${isCorrect ? 'bg-green-600' : 'bg-red-500'}`}>Continue</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- 結果画面 ---
+const ResultScreen = ({ score, total, xpGained, isLevelUp, currentLevel, onHome }) => {
+  const percentage = total > 0 ? (score / total) * 100 : 0;
+  return (
+    <div className="h-full flex flex-col items-center justify-center text-center pb-12 animate-fade-in relative overflow-hidden">
+      {isLevelUp && (
+        <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center animate-fade-in">
+          <div className="bg-white p-8 rounded-3xl shadow-2xl transform animate-bounce text-center max-w-xs">
+            <Trophy size={80} className="text-yellow-500 mx-auto mb-4 animate-pulse" />
+            <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-2">LEVEL UP!</h2>
+            <p className="text-slate-600 font-bold text-lg mb-4">You are now Lv. {currentLevel}</p>
+            <button onClick={(e) => { e.target.closest('.absolute').style.display = 'none'; }} className="bg-yellow-500 text-white px-6 py-2 rounded-full font-bold hover:bg-yellow-600">Awesome!</button>
+          </div>
+        </div>
+      )}
+      <div className="mb-8 relative"><div className="absolute -inset-4 bg-yellow-100 rounded-full animate-pulse opacity-50"></div><Trophy size={80} className="text-yellow-500 relative z-10" /></div>
+      <h1 className="text-3xl font-bold text-slate-800 mb-2">Complete!</h1>
+      <p className="text-slate-500 mb-8">お疲れ様でした！</p>
+      <div className="bg-white w-full rounded-2xl p-6 shadow-sm border border-slate-100 mb-6 grid grid-cols-2 gap-4">
+        <div className="border-r border-slate-100"><p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Score</p><p className="text-4xl font-bold text-blue-600 mt-1">{score}<span className="text-lg text-slate-300">/{total}</span></p></div>
+        <div><p className="text-xs text-slate-400 uppercase font-bold tracking-wider">XP Gained</p><p className="text-4xl font-bold text-yellow-500 mt-1">+{xpGained}</p></div>
+      </div>
+      <div className="w-full bg-slate-100 rounded-full h-4 mb-8 overflow-hidden"><div className={`h-full rounded-full ${percentage >= 80 ? 'bg-green-500' : 'bg-blue-500'}`} style={{ width: `${percentage}%` }}></div></div>
+      <button onClick={onHome} className="w-full bg-slate-800 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:bg-slate-700">ホームに戻る</button>
+    </div>
+  );
+};
+
+// --- 設定画面 ---
+const SettingsScreen = ({ onReset, onEnterTeacherMode }) => (
+  <div className="p-4 space-y-6">
+    <h2 className="text-2xl font-bold text-slate-800">Settings</h2>
+    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 space-y-4">
+      <div className="flex items-center space-x-4 mb-2"><div className="bg-blue-100 p-3 rounded-full text-blue-600"><User size={24} /></div><div><p className="font-bold text-slate-800">Student</p><p className="text-sm text-slate-500">Local Session</p></div></div>
+      <hr className="border-slate-100" />
+      <button onClick={onEnterTeacherMode} className="w-full flex items-center justify-center space-x-2 text-slate-700 bg-slate-50 py-3 rounded-lg font-bold hover:bg-slate-100 border border-slate-200"><PenTool size={18} /><span>教師モードへ</span></button>
+      <button onClick={onReset} className="w-full flex items-center justify-center space-x-2 text-red-500 bg-red-50 py-3 rounded-lg font-bold hover:bg-red-100"><span>Reset Data</span></button>
+    </div>
+  </div>
+);
+
+// --- スピーキング画面 ---
+const SpeakingScreen = ({ onExit }) => {
+  const [status, setStatus] = useState('idle');
+  const [transcript, setTranscript] = useState('');
+  const [feedback, setFeedback] = useState('');
+  const targetPhrase = "Go straight and turn left";
+
+  const startListening = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) { alert('Speech API not supported'); return; }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.start();
+    setStatus('listening'); setTranscript(''); setFeedback('');
+    recognition.onresult = (e) => { const t = e.results[0][0].transcript; setTranscript(t); evaluate(t); };
+    recognition.onerror = () => { setStatus('fail'); setFeedback('Try again'); };
+    recognition.onend = () => { if (status === 'listening') setStatus('idle'); };
+  };
+
+  const evaluate = (text) => {
+    setStatus('processing');
+    const c = text.toLowerCase().replace(/[.,!?]/g, '');
+    const t = targetPhrase.toLowerCase().replace(/[.,!?]/g, '');
+    setTimeout(() => {
+      if (c === t || c.includes("go straight") || c.includes("turn left")) { setStatus('success'); setFeedback('Great pronunciation!'); }
+      else { setStatus('fail'); setFeedback('Not quite.'); }
+    }, 800);
+  };
+
+  return (
+    <div className="h-full flex flex-col">
+      <div className="flex items-center mb-6"><button onClick={onExit}><XCircle size={24} className="text-slate-400" /></button><span className="ml-2 font-bold text-slate-700">スピーキング</span></div>
+      <div className="flex-1 flex flex-col items-center">
+        <div className="w-full bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
+           <div className="flex items-start mb-6"><div className="w-10 h-10 rounded-full bg-orange-400 flex items-center justify-center text-white font-bold flex-shrink-0 mr-3">AI</div><div className="bg-slate-100 p-4 rounded-2xl rounded-tl-none text-slate-700"><p>Excuse me, how can I get to the station?</p><button onClick={() => playAudio("Excuse me, how can I get to the station?")} className="mt-2 text-blue-500 text-xs font-bold flex items-center"><Volume2 size={12} className="mr-1" /> Listen</button></div></div>
+           <div className="flex items-end justify-end flex-col"><div className="bg-blue-50 p-4 rounded-2xl rounded-tr-none text-blue-900 border border-blue-100 w-full"><p className="text-xs text-blue-400 font-bold mb-1">YOUR TURN</p><p className="text-xl font-bold">{targetPhrase}</p><button onClick={() => playAudio(targetPhrase)} className="mt-2 text-blue-500 text-xs font-bold flex items-center"><Volume2 size={12} className="mr-1" /> Model</button></div></div>
+        </div>
+        <div className="min-h-[100px] text-center">{transcript && <p className="italic text-slate-500">"{transcript}"</p>}{status==='success' && <p className="text-green-500 font-bold">{feedback}</p>}{status==='fail' && <p className="text-red-400 font-bold">{feedback}</p>}</div>
+        <div className="mt-auto mb-12"><button onClick={startListening} disabled={status==='listening'||status==='processing'} className={`w-24 h-24 rounded-full flex items-center justify-center shadow-xl ${status==='listening'?'bg-red-500 animate-pulse':'bg-blue-600'}`}><Mic size={36} className="text-white" /></button></div>
+      </div>
+    </div>
+  );
+};
+
+// ==========================================
+// 4. Main App
+// ==========================================
+
+export default function App() {
+  const [screen, setScreen] = useState('home'); // home, quiz, speaking, result, teacher, create_problem
+  const [activeTab, setActiveTab] = useState('home'); 
+  
+  const [vocabularyProblems, setVocabularyProblems] = useState([]);
+  const [grammarProblems, setGrammarProblems] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [studentSubmissions, setStudentSubmissions] = useState([]); 
+  
+  const [userStats, setUserStats] = useState({ xp: 0, streak: 1 });
+  const [quizConfig, setQuizConfig] = useState(null);
+  const [lastResult, setLastResult] = useState(null);
+
+  // 教師アクション
+  const handleAddProblem = (type, problem) => {
+    if (type === 'vocabulary') setVocabularyProblems(p => [...p, problem]);
+    else setGrammarProblems(p => [...p, problem]);
+  };
+
+  const handleCreateAssignment = (title, category) => {
+    const problems = category === 'Vocabulary' ? vocabularyProblems : grammarProblems;
+    const newAssignment = {
+      id: `a-${Date.now()}`,
+      title,
+      category,
+      problems: problems.map(p => p.id),
+      completed: false,
+      xp: problems.length * 50
+    };
+    setAssignments(p => [newAssignment, ...p]);
+  };
+
+  // 生徒投稿アクション
+  const handleSubmitProblem = (problem) => {
+    setStudentSubmissions(p => [problem, ...p]);
+    setUserStats(p => ({ ...p, xp: p.xp + 50 })); 
+    alert('提出しました！報酬として50XPを獲得しました。');
+    setScreen('home');
+  };
+
+  const handleApproveSubmission = (submission) => {
+    const newProblem = { ...submission, id: `approved-${Date.now()}`, options: submission.options.sort(() => Math.random() - 0.5) };
+    if (submission.category === 'vocabulary') setVocabularyProblems(p => [...p, newProblem]);
+    else setGrammarProblems(p => [...p, newProblem]);
+    setStudentSubmissions(p => p.filter(s => s.id !== submission.id));
+  };
+
+  const handleRejectSubmission = (id) => {
+    setStudentSubmissions(p => p.filter(s => s.id !== id));
+  };
+
+  // クイズ処理
+  const startQuiz = (mode, data = null) => {
+    let problems = [];
+    let xp = 0;
+    let assignmentId = null;
+
+    if (mode === 'assignment' && data) {
+      problems = data.problems.map(pid => [...vocabularyProblems, ...grammarProblems].find(p => p.id === pid)).filter(Boolean);
+      xp = data.xp;
+      assignmentId = data.id;
+    } else if (mode === 'vocabulary') {
+      problems = vocabularyProblems;
+      xp = problems.length * 50;
+    } else if (mode === 'grammar') {
+      problems = grammarProblems;
+      xp = problems.length * 50;
+    }
+
+    if (problems.length === 0) { alert("問題がありません。"); return; }
+    setQuizConfig({ problems, xp, assignmentId });
+    setScreen('quiz');
+  };
+
+  const handleQuizComplete = (score, total) => {
+    const xpEarned = Math.round(quizConfig.xp * (score / total));
+    const beforeLevelInfo = getLevelInfo(userStats.xp);
+    const newTotalXp = userStats.xp + xpEarned;
+    const afterLevelInfo = getLevelInfo(newTotalXp);
+    
+    setUserStats(p => ({ ...p, xp: newTotalXp }));
+    if (quizConfig.assignmentId) setAssignments(p => p.map(a => a.id === quizConfig.assignmentId ? { ...a, completed: true } : a));
+
+    setLastResult({ score, total, xpGained: xpEarned, isLevelUp: afterLevelInfo.level > beforeLevelInfo.level, currentLevel: afterLevelInfo.level });
+    setScreen('result');
+  };
+  
+  const handleReset = () => {
+    if(confirm('リセットしますか？')) {
+      setUserStats({ xp: 0, streak: 1 });
+      setAssignments([]); setVocabularyProblems([]); setGrammarProblems([]); setStudentSubmissions([]);
+      setScreen('home');
+    }
+  };
+
+  const renderScreen = () => {
+    switch (screen) {
+      case 'home':
+        if (activeTab === 'settings') return <SettingsScreen onReset={handleReset} onEnterTeacherMode={() => setScreen('teacher')} />;
+        return <HomeScreen userStats={userStats} assignments={assignments} onStartAssignment={(a) => startQuiz('assignment', a)} onStartSelfStudy={(mode) => startQuiz(mode)} onGoToSpeaking={() => setScreen('speaking')} onGoToCreate={() => setScreen('create_problem')} />;
+      case 'create_problem':
+        return <StudentCreateScreen onExit={() => setScreen('home')} onSubmitProblem={handleSubmitProblem} />;
+      case 'teacher':
+        return <TeacherScreen onExit={() => setScreen('home')} onAddProblem={handleAddProblem} onCreateAssignment={handleCreateAssignment} vocabCount={vocabularyProblems.length} grammarCount={grammarProblems.length} submissions={studentSubmissions} onApproveSubmission={handleApproveSubmission} onRejectSubmission={handleRejectSubmission} />;
+      case 'quiz':
+        return <QuizScreen quizData={quizConfig?.problems} onComplete={handleQuizComplete} onExit={() => setScreen('home')} />;
+      case 'speaking':
+        return <SpeakingScreen onExit={() => setScreen('home')} />;
+      case 'result':
+        return <ResultScreen {...lastResult} onHome={() => setScreen('home')} />;
+      default: return null;
+    }
+  };
+
+  return (
+    <div className="bg-slate-50 min-h-screen font-sans text-slate-800 antialiased selection:bg-blue-200 selection:text-blue-900">
+      <div className="max-w-md mx-auto bg-white min-h-screen shadow-xl relative overflow-hidden flex flex-col">
+        <main className="flex-1 overflow-y-auto no-scrollbar">
+          <div className={screen === 'home' || screen === 'teacher' ? "p-5 pb-20" : "p-5 h-full"}>{renderScreen()}</div>
+        </main>
+        {screen === 'home' && (
+          <nav className="bg-white border-t border-slate-100 px-6 py-3 flex justify-between items-center fixed bottom-0 left-0 right-0 max-w-md mx-auto z-40">
+            <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center space-y-1 ${activeTab === 'home' ? 'text-blue-600' : 'text-slate-400'}`}><Home size={24} strokeWidth={activeTab === 'home'?3:2} /><span className="text-[10px] font-bold">Home</span></button>
+            <button onClick={() => setActiveTab('stats')} className={`flex flex-col items-center space-y-1 ${activeTab === 'stats' ? 'text-blue-600' : 'text-slate-400'}`}><TrendingUp size={24} strokeWidth={activeTab === 'stats'?3:2} /><span className="text-[10px] font-bold">Stats</span></button>
+            <button onClick={() => setActiveTab('settings')} className={`flex flex-col items-center space-y-1 ${activeTab === 'settings' ? 'text-blue-600' : 'text-slate-400'}`}><Settings size={24} strokeWidth={activeTab === 'settings'?3:2} /><span className="text-[10px] font-bold">Settings</span></button>
+          </nav>
+        )}
+      </div>
+      <style>{`@keyframes fadeIn {from {opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}} @keyframes slideUp {from{transform:translateY(100%);}to{transform:translateY(0);}}.animate-fade-in{animation:fadeIn 0.4s ease-out forwards;}.animate-slide-up{animation:slideUp 0.3s cubic-bezier(0.16,1,0.3,1) forwards;}.no-scrollbar::-webkit-scrollbar{display:none;}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none;}`}</style>
+    </div>
+  );
+}
