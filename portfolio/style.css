@@ -1,0 +1,71 @@
+body {
+    margin: 0;
+    padding: 0;
+}
+
+.hero-container {
+    position: relative;
+    width: 100%;
+}
+
+img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.main-nav {
+    position: absolute;
+    top: 23%;
+    left: 70%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    text-align: center;
+}
+
+.main-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+}
+
+.main-nav a {
+    text-decoration: none;
+    color: #204350;
+    font-size: clamp(14px, 2.5vw, 2.5rem);
+    font-family: 'Zen Kaku Gothic Antique', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: bold;
+}
+
+.content-section {
+    padding: 4rem 0;
+    text-align: center;
+}
+
+.section-title {
+    font-family: 'Zen Kaku Gothic Antique', sans-serif;
+    font-size: clamp(20px, 4vw, 3.5rem);
+    letter-spacing: 0.2em;
+    font-weight: bold;
+    margin: 0;
+    color: #204350;
+}
+
+.hero-title {
+    position: absolute;
+    top: 37.5%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Zen Kaku Gothic Antique', sans-serif;
+    font-size: clamp(20px, 4vw, 3.5rem);
+    letter-spacing: 0.2em;
+    font-weight: bold;
+    margin: 0;
+    color: #204350;
+    text-align: center;
+}
