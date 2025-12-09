@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<link rel="stylesheet" href="style.css">
+
+<head>
+    <title>Document</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+Antique:wght@300;400;500;700;900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="hero-container">
+        <img src="haikeipr.png" alt="MIKUU ITATANI PORTFOLIO">
+        <nav class="main-nav">
+            <img src="title1.png" alt="Title" class="nav-decoration">
+            <ul>
+                <li><a href="#about">About</a></li>
+                <li><a href="#works">Works</a></li>
+            </ul>
+        </nav>
+        <div class="hero-content">
+            <h2 class="hero-title" id="about"><img src="about.png"></h2>
+            <img src="kao.png" alt="Profile" class="profile-image">
+            <img src="gaiyou1.png" alt="Profile" class="gaiyou-image">
+        </div>
+    </div>
+    <section id="works" class="content-section">
+        <h2 class="section-title"><img src="works.png" alt="WORKS"></h2>
+        <div class="works-gallery">
+            <img src="pic1.png" alt="Work 1">
+            <img src="pic2.png" alt="Work 2" onclick="openModal('po2.png')">
+            <img src="pic3.png" alt="Work 3" onclick="openModal('po3.png')">
+            <img src="pic4.png" alt="Work 4" onclick="openModal('po4.png')">
+            <img src="pic5.png" alt="Work 5" onclick="openModal('po5.png')">
+            <img src="pic6.png" alt="Work 6">
+            <img src="pic7.png" alt="Work 7">
+            <img src="pic8.png" alt="Work 8">
+            <img src="pic9.png" alt="Work 9">
+        </div>
+
+        <!-- Modal -->
+        <div id="imageModal" class="modal-overlay" onclick="closeModal()">
+            <img id="modalImage" class="modal-content" src="" alt="Popup Image">
+        </div>
+    </section>
+    <footer class="footer-section">
+        <img src="title2.png" alt="Footer Title" class="footer-title">
+        <img src="fuda.png" alt="Footer" class="footer-image">
+    </footer>
+
+    <script>
+        function openModal(imageSrc) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modal.style.display = 'flex';
+            // Slight delay to allow display flex to apply before adding active class for transition
+            setTimeout(() => {
+                modal.classList.add('active');
+            }, 10);
+            modalImg.src = imageSrc;
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                document.getElementById('modalImage').src = "";
+            }, 300); // Wait for transition to finish
+        }
+    </script>
+</body>
+
+</html>
